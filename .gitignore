@@ -1,0 +1,11 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# IDE (PyCharm)
+.idea/
+*.iml
+
+# 환경 변수 파일
+.env
