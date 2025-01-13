@@ -10,6 +10,7 @@ requests==2.32.1
 httpx==0.26.0
 psycopg2-binary==2.9.10
 alembic==1.11.1
+pytz==2024.2
 
 # 테스트 및 개발 환경 패키지
 pytest==7.4.3
@@ -18,3 +19,4 @@ pytest-asyncio==0.20.3
 attrs==23.1.0
 mypy==1.6.0
 black==24.3.0
+
