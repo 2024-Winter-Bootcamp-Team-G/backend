@@ -8,7 +8,8 @@ python-dotenv==1.0.1
 bcrypt==4.1.2
 requests==2.32.1
 httpx==0.26.0
-psycopg[binary]==3.2.2
+psycopg2-binary==2.9.10
+alembic==1.11.1
 
 # 테스트 및 개발 환경 패키지
 pytest==7.4.3
