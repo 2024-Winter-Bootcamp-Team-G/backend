@@ -3,7 +3,8 @@ FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:$PATH"
 
 # Set the working directory
 WORKDIR /app

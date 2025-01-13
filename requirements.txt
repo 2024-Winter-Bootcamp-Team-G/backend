@@ -1,3 +1,4 @@
+# 운영 환경 패키지
 fastapi==0.115.6
 uvicorn[standard]==0.27.1
 pydantic==2.6.4
@@ -5,7 +6,13 @@ sqlalchemy==2.0.27
 email-validator==2.1.1
 python-dotenv==1.0.1
 bcrypt==4.1.2
-requests==2.32.0
+requests==2.32.1
 httpx==0.26.0
+psycopg[binary]==3.2.2
+
+# 테스트 및 개발 환경 패키지
 pytest==7.4.3
 pytest-subtests==0.7.0
+pytest-asyncio==0.20.3
+mypy==1.6.0
+black==23.7.0
