@@ -4,10 +4,32 @@ from fastapi import HTTPException, status
 from app.config import settings, RedisSettings
 from app.models import User
 from dotenv import load_dotenv
-from app.utils import time_zone
+from app.utils import time_zone, hash_password
 from app.utils.redis_handler import RedisHandler
+from sqlalchemy.orm import Session
 
 load_dotenv()
+
+
+# 새로운 유저생성
+
+
+def create_user(user_data, db: Session):
+    hashed_password = hash_password(user_data.password)
+    new_user = User(
+        email=user_data.email,
+        hashed_password=hashed_password,
+        user_name=user_data.user_name,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+def is_email_taken(email: str, db: Session) -> bool:
+    existing_user = db.query(User).filter(User.email == email).first()
+    return existing_user is not None
 
 
 # JWT 토큰 생성 함수
@@ -50,6 +72,8 @@ def login_user(user: User, db):
             expire=refresh_token_expires.seconds,
         )
         return {"access_token": access_token, "refresh_token": refresh_token}
+    else:
+        return False
 
 
 """    
