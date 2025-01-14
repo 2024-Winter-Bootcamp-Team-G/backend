@@ -20,5 +20,16 @@ class UserResponse(BaseModel):
     id: int
     email: EmailStr = Field(..., max_length=50)
     user_name: str = Field(..., max_length=50)
-
     model_config = ConfigDict(from_attributes=True)
+
+
+# 로그인 요청
+class UserLoginRequest(BaseModel):
+    email: EmailStr = Field(..., max_length=50)
+    password: str = Field(..., max_length=50)
+
+
+# 로그인 응답
+class UserLoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str

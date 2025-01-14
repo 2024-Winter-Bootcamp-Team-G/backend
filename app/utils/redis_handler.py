@@ -1,4 +1,5 @@
 import redis
+import json
 from app.config import settings
 
 redis_client = redis.Redis(
@@ -16,3 +17,15 @@ class RedisHandler:
         if not raw_data:
             raise ValueError(f"Redis에 '{key}' 키에 해당하는 데이터가 없습니다.")
         return raw_data
+
+    # 저장
+    def set_key_value(key: str, value: str, expire: int = 3600):
+        redis_client.set(key, value, ex=expire)
+
+    # 불러오기
+    def get_value(key: str) -> str:
+        return redis_client.get(key)
+
+    # 삭제
+    def delete_key(key: str):
+        redis_client.delete(key)

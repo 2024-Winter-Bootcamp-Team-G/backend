@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
 from app.services.board_service import get_boards, get_board_by_id, create_board
 from app.db import get_db
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
 
@@ -69,19 +70,27 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
     }
 
 
-from fastapi import APIRouter, HTTPException
-from app.utils.redis_handler import RedisHandler
-import json
-
-
-@router.get("/redis")
-def test_redis_data(redis_key: str = "youtube_raw_data"):
+@router.post("/match-ratio", response_model=dict)
+def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_db)):
     """
-    Redis에서 데이터를 읽어오는 테스트 라우트
+    알고리즘 일치율 게산 하는 로직 필요
     """
-    try:
-        raw_data = RedisHandler.get_youtube_raw_data(redis_key)
-        parsed_data = json.loads(raw_data)  # JSON 문자열을 Python dict로 변환
-        return {"message": "Redis 데이터 읽기 성공", "data": parsed_data}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Redis 테스트 실패: {str(e)}")
+    """ 주석 제거 후 내용(응답 값) 작성 필요, 틀만 만들어 놓음
+    return JSONResponse(status_code=200, content={
+        "message": "알고리즘 일치율 계산에 성공했습니다.",
+        "result": {
+            "user1_keywords": ,
+            "user2_keywords": ,
+            "match_keywords":
+                {
+                    "keyword": ,
+                    "match_rate":
+                },
+                {
+                    "keyword": ,
+                    "match_rate":
+                }
+            ],
+            "total_match_rate":
+    )
+    """

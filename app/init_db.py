@@ -37,11 +37,13 @@ def init_db():
             user_id=1,
             board_name="Sample Board 1",
             created_at=datetime.now(KST),
+
         )
         board_2 = Board(
             user_id=2,
             board_name="Sample Board 2",
             created_at=datetime.now(KST),
+            created_at=datetime(),
         )
         db.add_all([board_1, board_2])
         db.commit()
