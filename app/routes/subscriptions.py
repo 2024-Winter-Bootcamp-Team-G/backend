@@ -19,10 +19,9 @@ def get_subscriptions(access_token: str):
     for item in data.get("items", []):
         snippet = item.get("snippet", {})
         channel_info = {
-            "채널프로필": snippet.get("thumbnails", {}).get("default", {}).get("url"),
             "채널이름": snippet.get("title"),
             "채널ID": snippet.get("resourceId", {}).get("channelId"),
-            "채널이미지": snippet.get("thumbnails", {}).get("high", {}).get("url")
+            "채널이미지": snippet.get("thumbnails", {}).get("default", {}).get("url")
         }
         result.append(channel_info)
 

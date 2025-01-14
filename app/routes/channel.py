@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header
 from fastapi.responses import JSONResponse
 from typing import Optional
-from app.models.SelectedChannelsRequest import SelectedChannelsRequest
+from app.schemas.SelectedChannelsRequest import SelectedChannelsRequest
 from app.utils.utils import youtube_api_request
 
 router = APIRouter(prefix="/preferences", tags=["Channel Preferences"])
