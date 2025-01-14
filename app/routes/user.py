@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import User
-from app.schemas.user import UserCreate, UserResponse, UserLoginResponse, UserLoginRequest
+from app.schemas.user import (
+    UserCreate,
+    UserResponse,
+    UserLoginResponse,
+    UserLoginRequest,
+)
 from app.utils import hash_password, verify_password
 from app.services.user_service import login_user, logout_user
 from fastapi.responses import JSONResponse
@@ -50,23 +55,27 @@ def login(user: UserLoginRequest, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user and verify_password(user.password, db_user.hashed_password) == True:
         tokens = login_user(db_user, db)
-        return JSONResponse(status_code=200, content={
-            "message": "로그인 성공.",
-            "result": {
-                "user_id": db_user.id,
-                "token": {
-                    "access": tokens["access_token"],
-                    "refresh": tokens["refresh_token"],
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "로그인 성공.",
+                "result": {
+                    "user_id": db_user.id,
+                    "token": {
+                        "access": tokens["access_token"],
+                        "refresh": tokens["refresh_token"],
                     },
-                "email": db_user.email
-                }
-            }
+                    "email": db_user.email,
+                },
+            },
         )
     else:
-        return JSONResponse(status_code=401, content={
-            "message": "이메일 또는 비밀번호가 잘못되었습니다.",
-            "result": None
-            }
+        return JSONResponse(
+            status_code=401,
+            content={
+                "message": "이메일 또는 비밀번호가 잘못되었습니다.",
+                "result": None,
+            },
         )
 
 

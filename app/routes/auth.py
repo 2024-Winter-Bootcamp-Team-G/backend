@@ -5,6 +5,7 @@ from app.config import GoogleConfig
 
 router = APIRouter(prefix="/oauth", tags=["Authentication"])
 
+
 @router.get("/login")
 def login():
     scope = "https://www.googleapis.com/auth/youtube.readonly"
@@ -18,6 +19,7 @@ def login():
         f"&access_type=offline"
     )
     return RedirectResponse(auth_url)
+
 
 @router.get("/callback")
 def auth_callback(request: Request):
@@ -42,8 +44,9 @@ def auth_callback(request: Request):
 
     token_data = response.json()
 
-    return JSONResponse(content={
-        "message": "액세스 토큰을 성공적으로 가져왔습니다.",
-        "result": token_data
-    })
-
+    return JSONResponse(
+        content={
+            "message": "액세스 토큰을 성공적으로 가져왔습니다.",
+            "result": token_data,
+        }
+    )

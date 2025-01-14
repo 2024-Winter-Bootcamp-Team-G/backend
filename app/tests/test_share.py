@@ -5,6 +5,7 @@ from app.utils.redis_handler import redis_client
 
 client = TestClient(app)
 
+
 @pytest.fixture
 def setup_redis():
     """
@@ -20,6 +21,7 @@ def setup_redis():
 
     # 테스트 종료 후 Redis 데이터 삭제
     redis_client.flushdb()
+
 
 def test_post_share(setup_redis):
     """
@@ -37,6 +39,7 @@ def test_post_share(setup_redis):
     shared_link = redis_client.get(f"shared_link:{board_id}")
     assert shared_link == f"https://example.com/shared-board/{board_id}"
 
+
 def test_get_shared_link(setup_redis):
     """
     GET /shared-link/{board_id} 테스트: 공유 링크 조회.
@@ -47,7 +50,10 @@ def test_get_shared_link(setup_redis):
 
     data = response.json()
     assert data["message"] == "공유 링크 조회에 성공했습니다."
-    assert data["result"]["shared_link"] == f"https://example.com/shared-board/{board_id}"
+    assert (
+        data["result"]["shared_link"] == f"https://example.com/shared-board/{board_id}"
+    )
+
 
 def test_get_nonexistent_shared_link(setup_redis):
     """

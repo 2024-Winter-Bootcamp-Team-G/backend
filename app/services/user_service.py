@@ -30,8 +30,12 @@ def login_user(user: User, db):
     # 유효한 사용자일 경우
     if user:
         # 액세스 토큰 및 리프레시 토큰 생성
-        access_token_expires = timedelta(minutes=RedisSettings.access_token_expire_minutes)
-        refresh_token_expires = timedelta(minutes=RedisSettings.refresh_token_expire_minutes)
+        access_token_expires = timedelta(
+            minutes=RedisSettings.access_token_expire_minutes
+        )
+        refresh_token_expires = timedelta(
+            minutes=RedisSettings.refresh_token_expire_minutes
+        )
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
@@ -40,8 +44,13 @@ def login_user(user: User, db):
         )
 
         # 리프레시 토큰을 Redis에 저장
-        RedisHandler.set_key_value(f"refresh_token_{user.email}", refresh_token, expire=refresh_token_expires.seconds)
+        RedisHandler.set_key_value(
+            f"refresh_token_{user.email}",
+            refresh_token,
+            expire=refresh_token_expires.seconds,
+        )
         return {"access_token": access_token, "refresh_token": refresh_token}
+
 
 """    
     else:
@@ -52,12 +61,17 @@ def login_user(user: User, db):
         )
 """
 
+
 def logout_user(refresh_token: str):
     # 리프레시 토큰을 Redis에서 삭제
-    decoded_refresh_token = jwt.decode(refresh_token, settings.secret_key, algorithms=[settings.algorithm])
+    decoded_refresh_token = jwt.decode(
+        refresh_token, settings.secret_key, algorithms=[settings.algorithm]
+    )
     email = decoded_refresh_token.get("sub")
 
     if email:
         RedisHandler.delete_key(f"refresh_token_{email}")
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="잘못된 토큰")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="잘못된 토큰"
+        )

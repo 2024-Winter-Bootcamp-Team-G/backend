@@ -18,7 +18,7 @@ def create_new_board(board: BoardCreate, db: Session = Depends(get_db)):
             "id": new_board.id,
             "board_name": new_board.board_name,
             "created_at": new_board.created_at,
-        }
+        },
     }
 
 
@@ -33,11 +33,11 @@ def read_boards(db: Session = Depends(get_db)):
                 {
                     "id": board.id,
                     "board_name": board.board_name,
-                    "created_at": board.created_at
+                    "created_at": board.created_at,
                 }
                 for board in boards
             ]
-        }
+        },
     }
 
 
@@ -57,8 +57,9 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
                 "keyword": board.keyword,
                 "created_at": board.created_at,
             }
-        }
+        },
     }
+
 
 @router.post("/match-ratio", response_model=dict)
 def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_db)):

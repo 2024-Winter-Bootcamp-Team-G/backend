@@ -16,6 +16,7 @@ class BoardCreate(BoardBase):
     created_at: datetime = Field(default_factory=datetime.now)  # 기본값 설정
     pass
 
+
 class BoardResponse(BoardBase):
     id: int
     created_at: Optional[datetime]
