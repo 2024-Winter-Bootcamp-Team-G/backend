@@ -3,34 +3,50 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: fastapi-server
     ports:
       - "8000:8000"
     depends_on:
       - db
       - redis
     environment:
-      - DATABASE_URL=postgresql+psycopg2://user:password@db:5432/mydatabase
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
     volumes:
       - .:/app
+    networks:
+      - backend_network
 
   db:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydatabase
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - backend_network
+#    healthcheck:
+#      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}" ]
+#      interval: 5s
+#      retries: 3
 
   redis:
     image: redis:alpine
     container_name: redis
     ports:
       - "6379:6379"
+    networks:
+      - backend_network
 
 volumes:
   db_data:
+
+networks:
+  backend_network:
+    driver: bridge

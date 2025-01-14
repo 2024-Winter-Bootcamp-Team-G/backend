@@ -12,6 +12,7 @@ from app.utils import hash_password, verify_password
 from app.services.user_service import login_user, logout_user, create_user, is_email_taken
 from fastapi.responses import JSONResponse
 
+
 router = APIRouter(prefix="/auth", tags=["Users"])
 
 

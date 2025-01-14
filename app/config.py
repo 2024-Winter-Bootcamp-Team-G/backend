@@ -2,17 +2,19 @@ from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
 
+
 folder_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(dotenv_path=folder_path + "/.env")
 
 
 class Settings(BaseSettings):
-    app_name: str = "My FastAPI App"
+    app_name: str
     database_url: str
     redis_host: str = "redis"
     redis_port: int = 6379
     secret_key: str = os.getenv("SECRET_KEY")
     algorithm: str = os.getenv("ALGORITHM", "HS256")
+      
 
     class Config:
         env_file = ".env"
