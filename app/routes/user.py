@@ -57,17 +57,17 @@ def login(user: UserLoginRequest, db: Session = Depends(get_db)):
                 "token": {
                     "access": tokens["access_token"],
                     "refresh": tokens["refresh_token"],
-                },
+                    },
                 "email": db_user.email
+                }
             }
-        }
-                            )
+        )
     else:
         return JSONResponse(status_code=401, content={
             "message": "이메일 또는 비밀번호가 잘못되었습니다.",
             "result": None
-        }
-                            )
+            }
+        )
 
 
 @router.post("/logout")
