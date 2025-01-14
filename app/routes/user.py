@@ -5,8 +5,6 @@ from app.models import User
 from app.schemas.user import UserCreate, UserResponse
 from app.utils import hash_password
 
-router = APIRouter()
-
 router = APIRouter(prefix="/auth", tags=["Users"])
 
 

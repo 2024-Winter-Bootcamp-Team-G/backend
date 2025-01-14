@@ -1,6 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Dict
 from datetime import datetime
+import pytz
+
+KST = pytz.timezone("Asia/Seoul")
 
 
 class BoardBase(BaseModel):
@@ -12,10 +15,11 @@ class BoardBase(BaseModel):
 
 
 class BoardCreate(BoardBase):
-    # user_id: int
-    created_at: datetime = Field(default_factory=datetime.now)  # 기본값 설정
-    pass
+    user_id: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(KST))
+
 
 class BoardResponse(BoardBase):
     id: int
-    created_at: Optional[datetime]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(KST))
+    model_config = ConfigDict(from_attributes=True)
