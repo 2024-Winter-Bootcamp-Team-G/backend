@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 import requests
 from app.config import GoogleConfig
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/oauth", tags=["Authentication"])
 
 @router.get("/login")
 def login():
