@@ -11,6 +11,7 @@ app = FastAPI()
 app.include_router(user.router)
 app.include_router(board.router)
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI Backend"}

@@ -9,6 +9,7 @@ KST = pytz.timezone("Asia/Seoul")
 # 데이터베이스 테이블 생성
 Base.metadata.create_all(bind=engine)
 
+
 # 샘플 데이터 삽입
 def init_db():
     db = SessionLocal()  # SessionLocal()로 세션 객체 생성

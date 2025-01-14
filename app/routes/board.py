@@ -69,10 +69,11 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
     }
 
 
-
 from fastapi import APIRouter, HTTPException
 from app.utils.redis_handler import RedisHandler
 import json
+
+
 @router.get("/redis")
 def test_redis_data(redis_key: str = "youtube_raw_data"):
     """

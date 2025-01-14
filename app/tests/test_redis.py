@@ -6,16 +6,18 @@ import json
 
 client = TestClient(app)
 
+
 def setup_module(module):
     """
     Redis에 더미 데이터 삽입
     """
-    redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
     dummy_data = {
         "kind": "youtube#videoListResponse",
         "items": [{"id": "uJLqYB8npDc", "snippet": {"title": "테스트 영상"}}],
     }
     redis_client.set("youtube_raw_data", json.dumps(dummy_data))
+
 
 def test_redis_handler():
     """
@@ -25,6 +27,7 @@ def test_redis_handler():
     assert raw_data is not None
     parsed_data = json.loads(raw_data)
     assert "items" in parsed_data
+
 
 def test_fastapi_redis_route():
     """
