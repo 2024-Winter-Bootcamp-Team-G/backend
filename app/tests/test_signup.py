@@ -7,6 +7,7 @@ from datetime import datetime
 
 client = TestClient(app)
 
+
 # 테스트용 데이터베이스 세팅
 @pytest.fixture
 def setup_database():
@@ -18,7 +19,7 @@ def setup_database():
         hashed_password="hashedpassword123",
         user_name="testuser",
         created_at=datetime.now(),
-        updated_at=datetime.now()
+        updated_at=datetime.now(),
     )
     db.add(test_user)
     db.commit()
@@ -33,7 +34,7 @@ def test_signup_success(setup_database):
     user_data = {
         "email": "newuser@example.com",
         "password": "newpassword123",
-        "user_name": "newuser"
+        "user_name": "newuser",
     }
     response = client.post("/auth/signup", json=user_data)
     assert response.status_code == 200
@@ -48,7 +49,7 @@ def test_signup_duplicate_email(setup_database):
     user_data = {
         "email": "test@example.com",  # 이미 존재하는 이메일
         "password": "newpassword123",
-        "user_name": "anotheruser"
+        "user_name": "anotheruser",
     }
     response = client.post("/auth/signup", json=user_data)
     assert response.status_code == 400
