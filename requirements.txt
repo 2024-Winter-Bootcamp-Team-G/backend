@@ -1,7 +1,8 @@
 # 운영 환경 패키지
 fastapi==0.115.6
 uvicorn[standard]==0.27.1
-pydantic==2.6.4
+pydantic-settings~=2.7.1
+pydantic~=2.10.5
 sqlalchemy==2.0.27
 email-validator==2.1.1
 python-dotenv==1.0.1
@@ -21,4 +22,3 @@ pytest-asyncio==0.20.3
 attrs==23.1.0
 mypy==1.6.0
 black==24.3.0
-
