@@ -14,7 +14,7 @@ class User(Base):
     email = Column(String(50), unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     user_name = Column(String(50), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(KST))
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
     updated_at = Column(
         DateTime,
         nullable=False,
