@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from app.db import Base
 from datetime import datetime
-import pytz  # 패키지 설치 필요
-
-KST = pytz.timezone("Asia/Seoul")  # 시간대 한국으로 설정
+from app.utils import time_zone
 
 
 class User(Base):
@@ -13,10 +11,10 @@ class User(Base):
     email = Column(String(50), unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     user_name = Column(String(50), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(KST))
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(time_zone()))
     updated_at = Column(
         DateTime,
         nullable=False,
-        default=lambda: datetime.now(KST),
-        onupdate=lambda: datetime.now(KST),
+        default=lambda: datetime.now(time_zone()),
+        onupdate=lambda: datetime.now(time_zone()),
     )

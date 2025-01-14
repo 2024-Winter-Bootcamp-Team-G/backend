@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
 from app.services.board_service import get_boards, get_board_by_id, create_board
 from app.db import get_db
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
 
@@ -58,3 +59,28 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
             }
         }
     }
+
+@router.post("/match-ratio", response_model=dict)
+def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_db)):
+    """
+    알고리즘 일치율 게산 하는 로직 필요
+    """
+    """ 주석 제거 후 내용(응답 값) 작성 필요, 틀만 만들어 놓음
+    return JSONResponse(status_code=200, content={
+        "message": "알고리즘 일치율 계산에 성공했습니다.",
+        "result": {
+            "user1_keywords": ,
+            "user2_keywords": ,
+            "match_keywords":
+                {
+                    "keyword": ,
+                    "match_rate":
+                },
+                {
+                    "keyword": ,
+                    "match_rate":
+                }
+            ],
+            "total_match_rate":
+    )
+    """
