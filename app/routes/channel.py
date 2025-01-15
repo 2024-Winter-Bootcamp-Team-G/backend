@@ -6,6 +6,8 @@ from app.config import GoogleConfig
 router = APIRouter(prefix="/preferences", tags=["Channel Preferences"])
 
 youtube_api_key = GoogleConfig.API_KEY
+
+
 @router.post("/channel-send")
 def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 목록")):
     endpoint = "https://www.googleapis.com/youtube/v3/channels"
@@ -13,7 +15,7 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
     params = {
         "part": "snippet,statistics",
         "id": channel_id_list,
-        "key": youtube_api_key
+        "key": youtube_api_key,
     }
 
     response = requests.get(endpoint, params=params)
@@ -22,8 +24,8 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
             status_code=response.status_code,
             content={
                 "message": "YouTube API 호출에 실패했습니다.",
-                "error": response.json()
-            }
+                "error": response.json(),
+            },
         )
 
     data = response.json()
@@ -32,14 +34,11 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
         snippet = item.get("snippet", {})
         channel_info = {
             "채널이름": snippet.get("title"),
-            "채널설명": snippet.get("description")
+            "채널설명": snippet.get("description"),
         }
         result.append(channel_info)
 
     return JSONResponse(
         status_code=200,
-        content={
-            "message": "채널 정보를 성공적으로 가져왔습니다.",
-            "result": result
-        }
+        content={"message": "채널 정보를 성공적으로 가져왔습니다.", "result": result},
     )

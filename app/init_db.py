@@ -10,11 +10,13 @@ KST = pytz.timezone("Asia/Seoul")
 # 데이터베이스 테이블 생성
 Base.metadata.create_all(bind=engine)
 
+
 # 테이블 초기화
 def reset_db(db: Session):
     db.query(Board).delete()  # Boards 테이블 데이터 삭제
     db.query(User).delete()  # Users 테이블 데이터 삭제
     db.commit()
+
 
 # 샘플 데이터 삽입
 def init_db():
@@ -63,6 +65,7 @@ def init_db():
         print(f"Error during initialization: {e}")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     init_db()
