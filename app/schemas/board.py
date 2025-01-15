@@ -21,7 +21,6 @@ class BoardCreate(BoardBase):
     # created_at: Optional[datetime] = None
 
 
-
 class BoardResponse(BoardBase):
     id: int
     created_at: datetime = Field(default_factory=lambda: datetime.now(KST))

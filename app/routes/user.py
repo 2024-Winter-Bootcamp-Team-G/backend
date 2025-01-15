@@ -9,7 +9,12 @@ from app.schemas.user import (
     UserLoginRequest,
 )
 from app.utils import hash_password, verify_password
-from app.services.user_service import login_user, logout_user, create_user, is_email_taken
+from app.services.user_service import (
+    login_user,
+    logout_user,
+    create_user,
+    is_email_taken,
+)
 from fastapi.responses import JSONResponse
 
 
@@ -26,10 +31,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     if is_email_taken(user.email, db):
         return JSONResponse(
             status_code=400,
-            content={
-                "message": "이미 존재하는 이메일입니다.",
-                "result": None
-            },
+            content={"message": "이미 존재하는 이메일입니다.", "result": None},
         )
 
     # 사용자 생성 로직 호출
@@ -41,9 +43,9 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
             "result": {
                 "user_id": new_user.id,
                 "email": new_user.email,
-                "created_at": new_user.created_at.isoformat()
+                "created_at": new_user.created_at.isoformat(),
             },
-        }
+        },
     )
 
 
@@ -52,17 +54,11 @@ def check_email(email: str, db: Session = Depends(get_db)):
     if is_email_taken(email, db):
         return JSONResponse(
             status_code=400,
-            content={
-                "message": "이미 존재하는 이메일입니다.",
-                "result": False
-            },
+            content={"message": "이미 존재하는 이메일입니다.", "result": False},
         )
     return JSONResponse(
         status_code=201,
-        content={
-            "message": "이메일 사용 가능",
-            "result": True
-        },
+        content={"message": "이메일 사용 가능", "result": True},
     )
 
 
