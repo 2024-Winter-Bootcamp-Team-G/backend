@@ -1,7 +1,10 @@
+from unittest import result
+
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 import requests
 from app.config import GoogleConfig
+from app.utils.redis_handler import RedisHandler
 
 router = APIRouter(prefix="/preferences", tags=["Channel Preferences"])
 
@@ -43,12 +46,16 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
             }
             video_list.append(video_info)
 
+        # Redis에 저장
+        redis_key = f"youtube_videos:{channel_id}"
+        RedisHandler.save_to_redis(redis_key, video_list)
+
         results.append({"채널ID": channel_id, "최신동영상목록": video_list})
 
     return JSONResponse(
         status_code=200,
         content={
             "message": "채널 최신 동영상 목록을 성공적으로 가져왔습니다.",
-            "result": results,
+            "result": results
         },
     )
