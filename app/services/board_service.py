@@ -5,7 +5,8 @@ from app.utils.redis_handler import RedisHandler
 from app.utils.gpt_handler import classify_videos_with_gpt
 
 
-async def create_board(db: Session, board_data: BoardCreate):
+# 보드 생성
+async def create_board(db: Session, board_data: BoardCreate, user_id: int):
     """
     Redis에서 raw 데이터 가져오기 -> GPT 처리 -> DB 저장 (DALL·E는 추후 구현)
     """
@@ -24,16 +25,20 @@ async def create_board(db: Session, board_data: BoardCreate):
     # except Exception as e:
     #     raise ValueError(f"GPT 처리 오류: {str(e)}")
 
+    # # 임시 데이터
+    # keywords = {"example": "keyword"}
+    # category_ratio = {"category1": 70, "category2": 30}
+    # board_name = board_data.board_name or "Generated Board"
     # 3. DALL·E를 통한 이미지 생성 (추후 구현)
     image_url = None  # Placeholder: DALL·E 로직은 추후 추가
 
     # 4. DB 저장
     new_board = Board(
-        user_id=board_data.user_id,
-        board_name=board_name,
-        image_url=image_url,
-        category_ratio=category_ratio,
-        keyword=keywords,
+        user_id=user_id,
+        board_name=board_data.board_name,
+        image_url=image_url,  # board_data.image_url 로 추후 변경
+        category_ratio=board_data.category_ratio,
+        keyword=board_data.keyword,
     )
     db.add(new_board)
     db.commit()
@@ -50,10 +55,10 @@ async def create_board(db: Session, board_data: BoardCreate):
 
 
 # 모든 보드 조회
-def get_boards(db: Session):
-    return db.query(Board).all()
+def get_boards(db: Session, user_id: int):
+    return db.query(Board).filter(Board.user_id == user_id).all()
 
 
 # 보드 상세 조회
 def get_board_by_id(db: Session, board_id: int):
-    return db.query(Board).filter(Board.id == board_id).first()
+    return db.query(Board).filter(Board.id == board_id)

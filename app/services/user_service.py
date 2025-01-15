@@ -99,3 +99,22 @@ def logout_user(refresh_token: str):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="잘못된 토큰"
         )
+
+
+# JWT 디코딩 함수
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
