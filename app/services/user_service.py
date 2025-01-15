@@ -4,16 +4,16 @@ from fastapi import HTTPException, status
 from app.config import settings, RedisSettings
 from app.models import User
 from dotenv import load_dotenv
-from app.utils import time_zone, hash_password
+from app.utils import time_zone, hash_password, verify_password
 from app.utils.redis_handler import RedisHandler
 from sqlalchemy.orm import Session
+from app.utils.jwt_handler import create_access_token, create_refresh_token, decode_token
+
 
 load_dotenv()
 
 
 # 새로운 유저생성
-
-
 def create_user(user_data, db: Session):
     hashed_password = hash_password(user_data.password)
     new_user = User(
@@ -34,10 +34,13 @@ def is_email_taken(email: str, db: Session) -> bool:
 
 # JWT 토큰 생성 함수
 def create_access_token(data: dict, expires_delta: timedelta):
-    to_encode = data.copy()
-    expire = datetime.now(time_zone()) + expires_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    try:
+        to_encode = data.copy()
+        expire = datetime.utcnow() + expires_delta
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"JWT 생성 오류: {str(e)}")
 
 
 # JWT 리프레시 토큰 생성 함수
@@ -48,7 +51,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta):
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
-def login_user(user: User, db):
+def login_user(user: User, db: Session):
     # 유효한 사용자일 경우
     if user:
         # 액세스 토큰 및 리프레시 토큰 생성
