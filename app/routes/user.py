@@ -67,7 +67,9 @@ def login(
     password: str = Form(...),  # OAuth2PasswordBearer에 맞게 수정
     db: Session = Depends(get_db),
 ):
-    db_user = db.query(User).filter(User.email == username).first()  # username을 email로 사용
+    db_user = (
+        db.query(User).filter(User.email == username).first()
+    )  # username을 email로 사용
     if db_user and verify_password(password, db_user.hashed_password):
         tokens = login_user(db_user, db)
         return {
