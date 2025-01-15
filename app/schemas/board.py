@@ -15,11 +15,10 @@ class BoardBase(BaseModel):
 
 
 class BoardCreate(BoardBase):
-    redis_key: str  # Redis에서 데이터를 가져올 키
+    redis_key: Optional[str] = None  # Redis에서 데이터를 가져올 키
     created_at: datetime = Field(default_factory=lambda: datetime.now(KST))
 
 
 class BoardResponse(BoardBase):
     id: int
-    created_at: datetime = Field(default_factory=lambda: datetime.now(KST))
     model_config = ConfigDict(from_attributes=True)

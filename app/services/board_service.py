@@ -61,4 +61,4 @@ def get_boards(db: Session, user_id: int):
 
 # 보드 상세 조회
 def get_board_by_id(db: Session, board_id: int):
-    return db.query(Board).filter(Board.id == board_id)
+    return db.query(Board).filter(Board.id == board_id).first()
