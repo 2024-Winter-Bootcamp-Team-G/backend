@@ -18,6 +18,7 @@ app.include_router(channel.router)
 app.include_router(share.router)
 app.include_router(celery_tasks.router)
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI Backend"}

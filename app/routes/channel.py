@@ -25,7 +25,7 @@ youtube_api_key = GoogleConfig.API_KEY
 def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 목록")):
     search_endpoint = "https://www.googleapis.com/youtube/v3/search"
     video_endpoint = "https://www.googleapis.com/youtube/v3/videos"
-    max_video_ids_per_request = 50 # YouTube API 제한에 따라 50개씩 처리
+    max_video_ids_per_request = 50  # YouTube API 제한에 따라 50개씩 처리
     max_tag_count = 6  # 태그 최대 갯수 제한
     max_description_length = 300  # 설명 최대 길이 제한
     results = []
@@ -43,10 +43,12 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
                 # 문자열로 저장되어 있다면 JSON 파싱
                 latest_videos = json.loads(cached_video_ids)
 
-            results.append({
-                "채널ID": channel_id,
-                "최신동영상목록": latest_videos,
-            })
+            results.append(
+                {
+                    "채널ID": channel_id,
+                    "최신동영상목록": latest_videos,
+                }
+            )
             continue
 
         # YouTube API를 호출하여 최신 동영상 ID 가져오기
@@ -73,10 +75,12 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
         video_ids = [item["id"]["videoId"] for item in search_data.get("items", [])]
 
         if not video_ids:
-            results.append({
-                "채널ID": channel_id,
-                "최신동영상목록": [],
-            })
+            results.append(
+                {
+                    "채널ID": channel_id,
+                    "최신동영상목록": [],
+                }
+            )
             continue
 
         # Redis에 최신 동영상 ID 목록 저장
@@ -84,7 +88,7 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
 
         # 동영상 세부 정보 요청 및 Redis 저장
         for i in range(0, len(video_ids), max_video_ids_per_request):
-            chunk_ids = video_ids[i:i + max_video_ids_per_request]
+            chunk_ids = video_ids[i : i + max_video_ids_per_request]
             video_params = {
                 "part": "snippet, contentDetails, statistics",
                 "id": ",".join(chunk_ids),
@@ -110,8 +114,9 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
                     "tags": snippet.get("tags", [])[:max_tag_count],
                     "categoryId": snippet.get("categoryId"),
                     "localizedTitle": snippet.get("localized", {}).get("title"),
-                    "localizedDescription": snippet.get("localized", {}).get("description", "")[
-                                            :max_description_length],
+                    "localizedDescription": snippet.get("localized", {}).get(
+                        "description", ""
+                    )[:max_description_length],
                 }
 
                 # Redis에 동영상 세부 정보 저장
@@ -119,15 +124,17 @@ def get_channel_info(channel_ids: list[str] = Query(..., description="채널 ID 
                 RedisHandler.save_to_redis(redis_key_video, json.dumps(video_info))
                 video_details.append(video_info)
 
-            results.append({
-                "채널ID": channel_id,
-                "최신동영상목록": video_details,
-            })
+            results.append(
+                {
+                    "채널ID": channel_id,
+                    "최신동영상목록": video_details,
+                }
+            )
 
     return JSONResponse(
         status_code=200,
         content={
             "message": "채널 최신 동영상 목록과 상세 정보를을 성공적으로 가져왔습니다.",
-            "result": results
+            "result": results,
         },
     )

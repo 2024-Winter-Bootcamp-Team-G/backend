@@ -1,8 +1,10 @@
 from app.config import settings
 from celery import Celery
 
-app = Celery('backend', broker=settings.CELERY_BROKER_URL)
-app.conf.broker_connection_retry_on_startup = settings.CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP
+app = Celery("backend", broker=settings.CELERY_BROKER_URL)
+app.conf.broker_connection_retry_on_startup = (
+    settings.CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP
+)
 
 celery_app = Celery(
     "backend",
@@ -20,5 +22,5 @@ celery_app.conf.update(
 
 celery_app.conf.task_routes = {
     "app.services.celery_tasks.add": {"queue": "default"},
-    "app.services.celery_tasks.send_email": {"queue": "email"}
+    "app.services.celery_tasks.send_email": {"queue": "email"},
 }

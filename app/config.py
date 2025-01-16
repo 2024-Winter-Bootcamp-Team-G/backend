@@ -17,8 +17,12 @@ class Settings(BaseSettings):
     algorithm: str = os.getenv("ALGORITHM", "HS256")
 
     # Celery 설정
-    celery_broker_url: str = f"pyamqp://guest:guest@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}:5672//"
-    celery_result_backend: str = f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', 6379)}/0"
+    celery_broker_url: str = (
+        f"pyamqp://guest:guest@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}:5672//"
+    )
+    celery_result_backend: str = (
+        f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', 6379)}/0"
+    )
 
     # Celery 추가 설정
     CELERY_BROKER_URL: str = "amqp://guest:guest@rabbitmq:5672//"
@@ -37,8 +41,12 @@ class Settings(BaseSettings):
 class RedisSettings:
     secret_key: str = os.getenv("SECRET_KEY")
     algorithm: str = os.getenv("ALGORITHM")
-    access_token_expire_minutes: float = float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-    refresh_token_expire_minutes: float = float(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", 1440))
+    access_token_expire_minutes: float = float(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30)
+    )
+    refresh_token_expire_minutes: float = float(
+        os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", 1440)
+    )
 
 
 # Google API 클래스
