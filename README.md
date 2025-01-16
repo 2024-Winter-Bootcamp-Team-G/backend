@@ -67,7 +67,7 @@ backend/               # FastAPI 백엔드
 
 **Redis 저장 구조**
 1. 최신 동영상 목록:
-   - 키: `youtube_videos:{채널ID}`
+   - 키: `youtube_channel:{채널ID}`
    - 값: `["동영상ID1", "동영상ID2", ...]`
 
 2. 동영상 세부 정보:
