@@ -1,53 +1,101 @@
 services:
-  backend:
+  api-service:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: fastapi-server
-    ports:
-      - "8000:8000"
     depends_on:
-      - db
-      - redis
+      - postgresql-db
+      - redis-service
+      - rabbitmq
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     env_file:
       - .env
     volumes:
-      - .:/app
+      - type: bind
+        source: .
+        target: /app
+        consistency: cached
     networks:
-      - backend_network
+      - backend-network
+    ports:
+      - "8000:8000"
 
-  db:
+  postgresql-db:
     image: postgres:15
     container_name: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     restart: always
     networks:
-      - backend_network
+      - backend-network
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}" ]
-      interval: 5s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
 
-  redis:
+  redis-service:
     image: redis:alpine
     container_name: redis
+    networks:
+      - backend-network
+    restart: always
     ports:
       - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     networks:
-      - backend_network
+      - backend-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    depends_on:
+      - rabbitmq
+      - redis-service
+    image: python:3.12-slim
+    command: ["celery", "-A", "app.utils.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - C_FORCE_ROOT=False
+      - BROKER_URL=${CELERY_BROKER_URL}
+      - RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    networks:
+      - backend-network
 
 volumes:
-  db_data:
+  db-data:
 
 networks:
-  backend_network:
+  backend-network:
     driver: bridge

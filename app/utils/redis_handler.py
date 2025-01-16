@@ -31,10 +31,11 @@ class RedisHandler:
             combined_videos = existing_videos + unique_videos
             redis_client.set(key, json.dumps(combined_videos), ex=expire)
 
-            print(f"Redis에 {key} 저장 완료 (중복 제거 후 {len(unique_videos)}개 저장).")
+            print(
+                f"Redis에 {key} 저장 완료 (중복 제거 후 {len(unique_videos)}개 저장)."
+            )
         except Exception as e:
             print(f"Redis 저장 실패: {e}")
-
 
     @staticmethod
     def get_from_redis(key: str):
@@ -49,7 +50,6 @@ class RedisHandler:
         except Exception as e:
             print(f"Redis에서 데이터 가져오기 실패: {e}")
             return None
-
 
     @staticmethod
     def get_youtube_raw_data(key: str):
