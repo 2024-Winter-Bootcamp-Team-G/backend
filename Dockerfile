@@ -18,7 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --user -r requirements.txt
+    pip install --no-cache-dir --user -r requirements.txt && \
+    ln -s /root/.local/bin/celery /usr/local/bin/celery
+
+# Add celery user
+RUN useradd -ms /bin/bash celeryuser
+USER celeryuser
+WORKDIR /home/celeryuser
 
 # Stage 2: Runtime stage
 FROM python:3.12-slim
