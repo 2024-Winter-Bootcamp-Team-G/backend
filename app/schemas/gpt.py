@@ -1,11 +1,7 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List
 
-
-class GPTRequest(BaseModel):
-    video_list: List[str]
-
-
-class GPTResponse(BaseModel):
-    categories: Dict[str, float]
-    keywords: Dict[str, List[str]]
+class SaveKeywordsRequest(BaseModel):
+    user_id: int
+    category: str
+    keywords: List[str]

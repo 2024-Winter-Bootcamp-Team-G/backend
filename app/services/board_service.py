@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models.board import Board
 from app.schemas.board import BoardCreate
-from app.utils.redis_handler import RedisHandler
-from app.utils.gpt_handler import classify_videos_with_gpt
+# from app.utils.redis_handler import RedisHandler
+# from app.utils.gpt_handler import extract_keywords_video
 
 
 # 보드 생성

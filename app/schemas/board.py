@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from datetime import datetime
 import pytz
 
@@ -10,7 +10,8 @@ class BoardBase(BaseModel):
     board_name: Optional[str]
     image_url: Optional[str]
     category_ratio: Optional[Dict]
-    keyword: Optional[Dict]
+    keywords: Optional[List[str]]
+    category: Optional[str]
     model_config = ConfigDict(from_attributes=True)
 
 
