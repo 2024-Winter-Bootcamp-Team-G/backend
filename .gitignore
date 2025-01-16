@@ -12,3 +12,6 @@ __pycache__/
 
 # GCP 서비스 계정 키 파일
 gcp-key.json
+
+# postgres-data
+postgres-data

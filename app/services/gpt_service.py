@@ -1,7 +1,7 @@
 import json
 from sqlalchemy.orm import Session
 from app.utils.redis_handler import RedisHandler
-from app.utils.gpt_handler import classify_videos_with_gpt
+from app.utils.gpt_handler import generate_keywords_for_video
 from app.models.board import Board
 
 
@@ -13,7 +13,7 @@ def process_and_store_video_data(db: Session, redis_key: str, board_id: int):
         raise ValueError(f"Redis에서 {redis_key} 키에 해당하는 데이터가 없습니다.")
 
     # GPT로 데이터 분류
-    classification_result = classify_videos_with_gpt(raw_data)
+    classification_result = generate_keywords_for_video(raw_data)
     classification_dict = json.loads(classification_result)
 
     # DB에 저장

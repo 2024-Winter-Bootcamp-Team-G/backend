@@ -10,15 +10,17 @@ class DBHandler:
         for item in data:
             new_data = Board(
                 user_id=user_id,
-                category=item["category"],
-                keywords=item["keywords"]
+                keywords={item["category"]: item["keywords"]}
             )
             session.add(new_data)
         session.commit()
 
     @staticmethod
     def get_keywords_from_db(session: Session, category: str):
-        data = session.query(Board).filter(Board.category == category).first()
+        """
+        특정 카테고리의 키워드 데이터를 DB에서 조회
+        """
+        data = session.query(Board).filter(Board.keywords.has_key(category)).first()  # JSON 키로 필터링
         if not data:
             raise ValueError(f"카테고리 '{category}'에 해당하는 데이터가 없습니다.")
-        return {"category": data.category, "keywords": data.keywords}
+        return {"category": category, "keywords": data.keywords.get(category)}
