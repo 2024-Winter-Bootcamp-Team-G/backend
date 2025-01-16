@@ -75,7 +75,6 @@ backend/               # FastAPI 백엔드
    - 값:
      ```json
      {
-       "동영상ID": "동영상ID",
        "tags": ["태그1", "태그2"],
        "categoryId": "카테고리ID",
        "localizedTitle": "제목",
