@@ -36,7 +36,7 @@ async def generate_keywords_from_redis(channel_id: str) -> dict:
 
     return classification_results
 
-@router.get("/keywords/video/{video_id}")
+@router.get("/keywords/{video_id}")
 async def get_keywords_for_video(video_id: str):
     try:
         result = await generate_keywords_for_video(video_id)
@@ -46,7 +46,7 @@ async def get_keywords_for_video(video_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/gpt/keywords/save")
+@router.post("/keywords/save")
 async def save_keywords(
     request: SaveKeywordsRequest,  # Pydantic 모델로 변경
     db: Session = Depends(get_db)
@@ -59,14 +59,13 @@ async def save_keywords(
                 "category": request.category,
                 "keywords": request.keywords
             },
-            user_id=request.user_id  # user_id 전달
+            user_id=request.user_id  # 테스트용이라 user_id 1만 입력 가능, 변경 OK
         )
         return {"message": "카테고리와 키워드가 성공적으로 저장되었습니다."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"데이터 저장 실패: {str(e)}")
 
-
-@router.get("/keywords/{category}/images", tags=["Images"])
+@router.get("/keywords/{board_id}/images")
 async def generate_images(category: str, db: Session = Depends(get_db)):
     try:
         # PostgreSQL에서 데이터 불러오기
