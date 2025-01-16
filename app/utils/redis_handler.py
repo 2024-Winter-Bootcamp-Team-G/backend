@@ -31,6 +31,22 @@ class RedisHandler:
         except Exception as e:
             print(f"Redis 저장 실패: {e}")
 
+
+    @staticmethod
+    def get_from_redis(key: str):
+        """
+        Redis에서 데이터를 가져오기
+        """
+        try:
+            raw_data = redis_client.get(key)
+            if not raw_data:
+                return None
+            return json.loads(raw_data)
+        except Exception as e:
+            print(f"Redis에서 데이터 가져오기 실패: {e}")
+            return None
+
+
     @staticmethod
     def get_youtube_raw_data(key: str):
         """
