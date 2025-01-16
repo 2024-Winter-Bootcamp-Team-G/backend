@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
 from app.db import Base, engine
-from app.routes import board, user, auth, channel, subscriptions, share
+from app.routes import board, user, auth, channel, subscriptions, share, keyword
 from app.init_db import init_db
 
 
@@ -18,6 +18,7 @@ app.include_router(auth.router)
 app.include_router(subscriptions.router)
 app.include_router(channel.router)
 app.include_router(share.router)
+app.include_router(keyword.router)
 
 
 @app.get("/")

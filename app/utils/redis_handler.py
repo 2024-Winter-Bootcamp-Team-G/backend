@@ -18,6 +18,10 @@ class RedisHandler:
             else:
                 existing_videos = []
 
+            # 딕셔너리 리스트로
+            if isinstance(new_videos, dict):
+                new_videos = [new_videos]
+
             # 중복 제거: 새로운 동영상만 필터링
             unique_videos = [
                 video for video in new_videos if video not in existing_videos
@@ -57,6 +61,7 @@ class RedisHandler:
             raise ValueError(f"Redis에 '{key}' 키에 해당하는 데이터가 없습니다.")
         # JSON 문자열을 다시 Python 리스트나 딕셔너리로 변환
         return json.loads(raw_data)
+
 
     # 저장
     def set_key_value(key: str, value: str, expire: int = 3600):

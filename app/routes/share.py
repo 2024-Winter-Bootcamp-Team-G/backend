@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.utils.shared_link import create_shared_link
 from app.utils.redis_handler import redis_client
 
-router = APIRouter()
+router = APIRouter(prefix="/boards", tags=["Boards"])
 
 
 @router.post("/share")
