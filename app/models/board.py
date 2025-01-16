@@ -15,7 +15,8 @@ class Board(Base):
     board_name = Column(String, nullable=True)
     image_url = Column(String, nullable=True)
     category_ratio = Column(JSON, nullable=True)
-    keyword = Column(JSON, nullable=True)
+    category = Column(String, nullable=True)
+    keywords = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
 
     # Relationship
