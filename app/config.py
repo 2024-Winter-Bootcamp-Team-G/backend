@@ -55,7 +55,7 @@ class GoogleConfig:
     API_KEY: str = os.getenv("API_KEY")
     CLIENT_ID: str = os.getenv("CLIENT_ID")
     CLIENT_SECRET: str = os.getenv("CLIENT_SECRET")
-    REDIRECT_URI: str = "http://localhost:8000/oauth/callback"
+    REDIRECT_URI: str = "http://localhost:8000/googleauth/callback"
     GOOGLE_AUTH_URL: str = "https://accounts.google.com/o/oauth2/auth"
     GOOGLE_TOKEN_URL: str = "https://oauth2.googleapis.com/token"
     YOUTUBE_API_URL: str = "https://www.googleapis.com/youtube/v3/"
