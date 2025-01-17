@@ -8,6 +8,7 @@ import json
 
 router = APIRouter(prefix="/gpt", tags=["GPT"])
 
+
 @router.post("/keywords/{video_id}")
 async def get_keywords_for_video(
         video_ids: list[str],
