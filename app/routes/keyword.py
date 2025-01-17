@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.utils.redis_handler import RedisHandler
 from app.utils.gpt_handler import generate_keywords_for_video
-from app.utils.image_generator import generate_images_from_keywords
+from app.utils.dalle_handler import generate_image_with_dalle
 from app.utils.db_handler import DBHandler
 from app.db import get_db
 from app.schemas.gpt import SaveKeywordsRequest
@@ -10,6 +10,8 @@ import json
 
 router = APIRouter(prefix="/gpt", tags=["GPT"])
 
+
+# Redis에서 동영상 정보 가져와서 키워드 카테고리 생성
 async def generate_keywords_from_redis(channel_id: str) -> dict:
     redis_key = f"youtube_keywords:{channel_id}"
 
@@ -23,7 +25,9 @@ async def generate_keywords_from_redis(channel_id: str) -> dict:
     try:
         video_list = RedisHandler.get_youtube_raw_data(redis_video_key)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=f"동영상 데이터가 없습니다: {str(e)}")
+        raise HTTPException(
+            status_code=404, detail=f"동영상 데이터가 없습니다: {str(e)}"
+        )
 
     # 여러 동영상 데이터를 하나의 프롬프트로 GPT에 전달하여 카테고리 및 키워드 추출
     try:
@@ -36,6 +40,8 @@ async def generate_keywords_from_redis(channel_id: str) -> dict:
 
     return classification_results
 
+
+# 비디오에서 키워드 추출해서 gpt 돌린 값을 출력
 @router.get("/keywords/{video_id}")
 async def get_keywords_for_video(video_id: str):
     try:
@@ -46,24 +52,23 @@ async def get_keywords_for_video(video_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# 키워드와 카테고리 db에 저장
 @router.post("/keywords/save")
 async def save_keywords(
-    request: SaveKeywordsRequest,  # Pydantic 모델로 변경
-    db: Session = Depends(get_db)
+    request: SaveKeywordsRequest, db: Session = Depends(get_db)  # Pydantic 모델로 변경
 ):
     try:
         # 데이터 저장 로직
         DBHandler.save_gpt_response_to_db(
             db,
-            {
-                "category": request.category,
-                "keywords": request.keywords
-            },
-            user_id=request.user_id  # 테스트용이라 user_id 1만 입력 가능, 변경 OK
+            {"category": request.category, "keywords": request.keywords},
+            user_id=request.user_id,  # 테스트용이라 user_id 1만 입력 가능, 변경 OK
         )
         return {"message": "카테고리와 키워드가 성공적으로 저장되었습니다."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"데이터 저장 실패: {str(e)}")
+
 
 @router.get("/keywords/{board_id}/images")
 async def generate_images(category: str, db: Session = Depends(get_db)):
@@ -75,7 +80,7 @@ async def generate_images(category: str, db: Session = Depends(get_db)):
         keywords_by_category = {data["category"]: data["keywords"]}
 
         # DALL·E를 이용해 이미지 생성
-        images = generate_images_from_keywords(keywords_by_category)
+        images = generate_image_with_dalle(keywords_by_category)
 
         return {"category": category, "images": images}
     except ValueError as e:

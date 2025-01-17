@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.board import Board
 from app.schemas.board import BoardCreate
+from app.utils.dalle_handler import generate_image_with_dalle
+from app.utils.gcs_handler import upload_image_to_gcs
+
 # from app.utils.redis_handler import RedisHandler
 # from app.utils.gpt_handler import extract_keywords_video
 
@@ -27,18 +30,31 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int):
 
     # # 임시 데이터
     # keywords = {"example": "keyword"}
-    # category_ratio = {"category1": 70, "category2": 30}
-    # board_name = board_data.board_name or "Generated Board"
-    # 3. DALL·E를 통한 이미지 생성 (추후 구현)
-    image_url = None  # Placeholder: DALL·E 로직은 추후 추가
+    # category_ratio = [70, 30]
+    board_name = board_data.board_name or "Generated Board"
+
+    # 3. DALL·E를 통한 이미지 생성
+    try:
+        existing_board = db.query(Board).filter(Board.user_id == user_id).first()
+        category_ratio = existing_board.category_ratio
+        keywords = existing_board.keywords
+        image_url = generate_image_with_dalle(category_ratio, keywords)
+    except Exception as e:
+        raise ValueError(f"DALL·E 이미지 생성 오류: {str(e)}")
+    try:
+        gcs_image_url = upload_image_to_gcs(
+            image_url, f"boards/{user_id}/{board_name}.png"
+        )
+    except Exception as e:
+        raise ValueError(f"GCS 업로드 오류: {str(e)}")
 
     # 4. DB 저장
     new_board = Board(
         user_id=user_id,
         board_name=board_data.board_name,
-        image_url=image_url,  # board_data.image_url 로 추후 변경
-        category_ratio=board_data.category_ratio,
-        keyword=board_data.keyword,
+        image_url=gcs_image_url,
+        category_ratio=category_ratio,
+        keywords=keywords,
     )
     db.add(new_board)
     db.commit()
@@ -49,7 +65,7 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int):
             "id": new_board.id,
             "board_name": new_board.board_name,
             "category_ratio": new_board.category_ratio,
-            "keyword": new_board.keyword,
+            "keywords": new_board.keywords,
         },
     }
 

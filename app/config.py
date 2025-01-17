@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     secret_key: str = os.getenv("SECRET_KEY")
     algorithm: str = os.getenv("ALGORITHM", "HS256")
+    openai_api_key: str
 
     # Celery 설정
     celery_broker_url: str = (
