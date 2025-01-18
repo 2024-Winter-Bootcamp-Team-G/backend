@@ -28,6 +28,7 @@ async def create_new_board(
     board_data: BoardCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    channel_ids: list = None,
 ):
     """
     보드 생성:
@@ -38,8 +39,7 @@ async def create_new_board(
     """
 
     try:
-        user_id = current_user["id"]
-        result = await create_board(db, board_data, user_id)
+        result = await create_board(db=db, board_data=board_data, user_id=current_user["id"], channel_ids=channel_ids)
         return {"message": "보드 생성에 성공했습니다.", "result": result}
     except Exception as e:
         raise HTTPException(

@@ -3,23 +3,40 @@ from app.models.board import Board
 from app.schemas.board import BoardCreate
 from app.utils.dalle_handler import generate_image_with_dalle
 from app.utils.gcs_handler import upload_image_to_gcs
-from app.services.channel_service import fetch_channel_info
+from app.services.channel_service import fetch_cached_videos, fetch_video_details,fetch_videos_from_api
 
 
 # 보드 생성
-async def create_board(db: Session, board_data: BoardCreate, user_id: int):
+async def create_board(db: Session, board_data: BoardCreate, user_id: int, channel_ids:list ) -> Board:
     # 채널 ID 목록 가져오기
-    channel_ids = board_data.channel_ids  # BoardCreate에 채널 ID 필드가 있다고 가정
-    channel_info = fetch_channel_info(channel_ids)  # channel_service의 함수 호출
-
-    if "error" in channel_info:
-        raise Exception(channel_info["error"])
-
-
     # 2. 유튜브 API 호출 및 Redis 저장
     # TODO: 유튜브 API를 호출하여 채널 정보와 최신 동영상 목록을 Redis에 저장하는 로직 구현 필요
+    # channel_service의 함수 호출
+    results = []
 
+    # Step 1: Redis 캐시 확인
+    cached_results = fetch_cached_videos(channel_ids)
 
+    for result in cached_results:
+        channel_id = result["채널ID"]
+
+        # 캐시된 데이터 있으면 바로 추가
+        if result["is_cached"]:
+            results.append(result)
+            continue
+
+        # Step 2: API 호출하여 동영상 ID 가져오기
+        video_ids = fetch_videos_from_api(channel_id)
+        if not video_ids:
+            results.append({"채널ID": channel_id, "최신동영상목록": []})
+            continue
+
+        # redis 캐싱 확인
+
+        # Step 3: 동영상 세부 정보 가져오기
+        video_details = fetch_video_details(video_ids)
+
+        results.append({"채널ID": channel_id, "최신동영상목록": video_details})
 
     # 3. Redis에서 데이터 가져오기 및 GPT 키워드 생성
     # TODO: Redis에서 데이터를 가져와 GPT로 키워드와 카테고리를 생성하는 로직 구현 필요
@@ -73,7 +90,6 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int):
             "keywords": new_board.keywords,
         },
     }
-
 
 # 모든 보드 조회
 def get_boards(db: Session, user_id: int):
