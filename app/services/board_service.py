@@ -7,38 +7,17 @@ from app.utils.gcs_handler import upload_image_to_gcs
 from app.utils.gpt_handler import generate_keywords_and_category
 from urllib.parse import urlparse
 import time
+from app.services.channel_service import fetch_channel_info
 
 
 # 보드 생성
 async def create_board(db: Session, board_data: BoardCreate, user_id: int):
-    """
-    POST /board: 보드 생성 로직
+    # 채널 ID 목록 가져오기
+    channel_ids = board_data.channel_ids  # BoardCreate에 채널 ID 필드가 있다고 가정
+    channel_info = fetch_channel_info(channel_ids)  # channel_service의 함수 호출
 
-    전체 로직:
-    1. 선택한 채널 전송 (channel-send 엔드포인트 호출)
-    2. 유튜브 API 호출 → 채널 정보와 최신 동영상 목록 Redis 저장
-    3. Redis에서 데이터를 꺼내 GPT를 통해 키워드와 카테고리 생성
-       - 키워드 구조:
-         {
-           "category1": ["keyword1", "keyword2"],
-           ...
-         }
-       - 카테고리 비율 (category_ratio): [int, int, ...]
-    4. DALL·E를 호출하여 이미지 생성 → 이미지 결과 URL을 DB에 저장
-    5. 보드 생성 완료 → DB에 보드 데이터를 저장
-
-    Args:
-        db (Session): SQLAlchemy 세션
-        board_data (BoardCreate): 보드 생성에 필요한 데이터
-        user_id (int): 요청을 보낸 사용자의 ID
-
-    Returns:
-        dict: 생성된 보드 정보 및 성공 메시지
-    """
-    # 1. 선택한 채널 정보 전송
-    # TODO: channel-send 엔드포인트 호출 로직 구현 필요
-    # - 선택된 채널 ID를 받아서 전송
-    # - 성공적으로 전송되지 않을 경우 예외 처리
+    if "error" in channel_info:
+        raise Exception(channel_info["error"])
 
     # 2. 유튜브 API 호출 및 Redis 저장
     # TODO: 유튜브 API를 호출하여 채널 정보와 최신 동영상 목록을 Redis에 저장하는 로직 구현 필요
