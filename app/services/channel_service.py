@@ -6,7 +6,7 @@ import json
 youtube_api_key = GoogleConfig.API_KEY
 
 
-def fetch_channel_info(channel_ids: list[str]) -> list[dict]:
+def fetch_channel_info(board_id: int, channel_ids: list[str]) -> list[dict]:
     results = []
 
     # Step 1: Redis 캐시 확인
@@ -21,7 +21,7 @@ def fetch_channel_info(channel_ids: list[str]) -> list[dict]:
             continue
 
         # Step 2: API 호출하여 동영상 ID 가져오기
-        video_ids = fetch_videos_from_api(channel_id)
+        video_ids = fetch_videos_from_api(board_id, channel_id)
         if not video_ids:
             results.append({"채널ID": channel_id, "최신동영상목록": []})
             continue
@@ -62,7 +62,7 @@ def fetch_cached_videos(channel_ids: list[str]) -> list[dict]:
     return results
 
 
-def fetch_videos_from_api(channel_id: str) -> list[str]:
+def fetch_videos_from_api(board_id: int, channel_id: str) -> list[str]:
     search_params = {
         "part": "snippet",
         "channelId": channel_id,
@@ -82,10 +82,17 @@ def fetch_videos_from_api(channel_id: str) -> list[str]:
     search_data = search_response.json()
     video_ids = [item["id"]["videoId"] for item in search_data.get("items", [])]
 
-    # 데이터 캐싱
+    # Redis에 채널별 데이터 저장
     redis_key_channel = f"youtube_channel:{channel_id}"
     RedisHandler.save_to_redis(redis_key_channel, json.dumps(video_ids))
 
+    # Redis에 보드별 데이터 저장
+    redis_key_board_videos = f"board_videos:{board_id}"
+    existing_videos = RedisHandler.get_from_redis(redis_key_board_videos) or []
+    combined_videos = list(set(existing_videos + video_ids))
+    RedisHandler.save_to_redis(redis_key_board_videos, json.dumps(combined_videos))
+
+    print(f"Redis에 저장된 board_videos:{board_id}: {video_ids}")
     return video_ids
 
 
