@@ -197,30 +197,3 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
 
     except Exception as e:
         raise ValueError(f"키워드 재생성 오류: {str(e)}")
-
-
-# # 이미지 재생성
-# def regenerate_image(db: Session, board_id: int, user_id: int):
-#     board = get_board_by_id(db, board_id)
-#
-#     if not board:
-#         raise ValueError("Board not found")
-#
-#     if board.user_id != user_id:
-#         raise ValueError("권한이 없습니다.")
-#
-#     try:
-#         new_image_url = generate_image_with_dalle(board.category_ratio, json.loads(board.keywords))
-#         board.image_url = new_image_url
-#
-#         # 변경사항 저장
-#         db.commit()
-#         db.refresh(board)
-#
-#         return {
-#             "board_id": board.id,
-#             "new_image_url": new_image_url,
-#         }
-#
-#     except Exception as e:
-#         raise ValueError(f"이미지 재생성 중 오류 발생: {str(e)}")
