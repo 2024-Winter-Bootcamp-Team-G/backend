@@ -6,6 +6,8 @@ from app.db import get_db
 from app.services.user_service import decode_access_token
 from fastapi.security import OAuth2PasswordBearer
 from app.utils.gpt_handler import match_board_ratio
+from fastapi.responses import JSONResponse
+
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -101,8 +103,8 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/match-ratio", response_model=dict)
-def board_match(
+@router.post("/match-ratio")
+async def board_match(
         board_id1: int,
         board_id2: int,
         db: Session = Depends(get_db)
@@ -111,9 +113,15 @@ def board_match(
     board1 = get_board_by_id(db, board_id1)
     board2 = get_board_by_id(db, board_id2)
 
-    board_sum_list = [board1.category_ratio , board1.keyword,board2.category_ratio , board2.keyword ]
+    board_sum_list = [board1.keywords, board2.keywords ]
 
-    gpt_result = match_board_ratio(board_sum_list)
+    gpt_result = await match_board_ratio(board_sum_list)
+
+    return JSONResponse(
+        status_code=200,
+        content={"message": "알고리즘 일치율 계산에 성공했습니다.",
+                 "result": gpt_result}
+    )
 
     return gpt_result
 
