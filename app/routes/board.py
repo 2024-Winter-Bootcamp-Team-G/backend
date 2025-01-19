@@ -109,13 +109,16 @@ async def board_match(
     board1 = get_board_by_id(db, board_id1)
     board2 = get_board_by_id(db, board_id2)
 
-    board_sum_list = [board1.keywords, board2.keywords ]
+    board_sum_list = [board1.keywords, board2.keywords]
 
     gpt_result = await match_board_ratio(board_sum_list)
 
     return JSONResponse(
         status_code=200,
         content={"message": "알고리즘 일치율 계산에 성공했습니다.",
-                 "result": gpt_result}
+                 "match_ratio": gpt_result,
+                 "board1_category_ratio": board1.category_ratio,
+                 "board2_category_ratio": board2.category_ratio
+                 }
     )
 
