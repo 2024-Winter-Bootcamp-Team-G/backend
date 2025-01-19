@@ -6,15 +6,28 @@ from app.utils.dalle_handler import generate_image_with_dalle
 from app.utils.gcs_handler import upload_image_to_gcs
 from app.utils.gpt_handler import generate_keywords_and_category
 from urllib.parse import urlparse
-import time
-from app.services.channel_service import  fetch_cached_videos, fetch_video_details,fetch_videos_from_api
+from app.services.channel_service import fetch_cached_videos, fetch_video_details, fetch_videos_from_api
+from app.services.gpt_service import process_user_videos
+import time, json
 
 # 보드 생성
 async def create_board(db: Session, board_data: BoardCreate, user_id: int, channel_ids:list ) -> BoardResponse:
-    # 채널 ID 목록 가져오기
+    # 1. DB에 Board 먼저 생성 (ID 확보)
+    new_board = Board(
+        user_id=user_id,
+        board_name=board_data.board_name or "Generated Board",
+        image_url="",
+        category_ratio=[],
+        keywords={},
+    )
+    db.add(new_board)
+    db.commit()
+    db.refresh(new_board)  # board_id 확보
+
+    # 2. 채널 데이터 처리
     results = []
 
-    # Step 1: Redis 캐시 확인
+    # Redis 캐시 확인
     cached_results = fetch_cached_videos(channel_ids)
     
     for result in cached_results:
@@ -25,48 +38,40 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int, chann
             results.append(result)
             continue
 
-        # Step 2: API 호출하여 동영상 ID 가져오기
-        video_ids = fetch_videos_from_api(channel_id)
+        # API 호출하여 동영상 ID 가져오기
+        video_ids = fetch_videos_from_api(new_board.id, channel_id)
         if not video_ids:
             results.append({"채널ID": channel_id, "최신동영상목록": []})
             continue
 
         # redis 캐싱 확인
 
-        # Step 3: 동영상 세부 정보 가져오기
+        # 동영상 세부 정보 가져오기
         video_details = fetch_video_details(video_ids)
 
         results.append({"채널ID": channel_id, "최신동영상목록": video_details})
 
-    # step 4. Redis에서 데이터 가져오기 및 GPT 키워드 생성
-    # TODO: Redis에서 데이터를 가져와 GPT로 키워드와 카테고리를 생성하는 로직 구현 필요
-    board_name = (
-        board_data.board_name or "Generated Board"
-    )  # 보드 이름도 gpt가 생성해주어야 하긴 한데...
-
+    # 3. Redis에서 데이터 가져오기 및 GPT 키워드 생성
     gpt_result = await process_channel_data(channel_ids)
     category_ratio = gpt_result.get("category_ratio", [])
     keywords = gpt_result.get("keywords", {})
-    print(f"카테고리 비율: {category_ratio}")
-    print(f"키워드 비율: {keywords}")
 
-    # step 5. DALL·E를 통한 이미지 생성
+    # 4. DALL·E를 통한 이미지 생성
     try:
         image_url = generate_image_with_dalle(category_ratio, keywords)
         parsed_url = urlparse(image_url)
         if not parsed_url.scheme or not parsed_url.netloc:
             raise ValueError(f"생성된 이미지 URL이 유효하지 않습니다: {image_url}")
-
     except Exception as e:
         raise ValueError(f"DALL·E 이미지 생성 오류: {str(e)}")
 
-    # TODO: GCS 저장 로직 검증 필요
+    # 5. GCS 업로드
     max_retries = 3
     gcs_image_url = None
     for attempt in range(max_retries):
         try:
             gcs_image_url = upload_image_to_gcs(
-                image_url, f"boards/{user_id}/{board_name}.png"
+                image_url, f"boards/{user_id}/{new_board.board_name}.png"
             )
             break
         except Exception as e:
@@ -77,19 +82,10 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int, chann
                 raise ValueError(f"GCS 업로드 오류: {str(e)}")
 
     # step 6. DB 저장
-    print(f"[DEBUG] 저장 전 카테고리 비율: {category_ratio}")
-    print(f"[DEBUG] 저장 전 키워드: {keywords}")
-
-    new_board = Board(
-        user_id=user_id,
-        board_name=board_data.board_name,
-        image_url=gcs_image_url,
-        category_ratio=category_ratio,
-        keywords=keywords,
-    )
-    db.add(new_board)
+    new_board.image_url = gcs_image_url
+    new_board.category_ratio = category_ratio
+    new_board.keywords = keywords
     db.commit()
-    db.refresh(new_board)
 
 
 # 모든 보드 조회
@@ -136,9 +132,68 @@ async def process_channel_data(channel_ids: list[str]):
         if not video_data_list:
             raise ValueError("GPT로 보낼 데이터가 없습니다.")
 
-        gpt_result = await generate_keywords_and_category(video_data_list)
-        print(f"GPT에서 받은 데이터: {gpt_result}")
-        return gpt_result
+        try:
+            print(f"GPT에 전송할 채널 리스트: {video_data_list}")
+            gpt_result = await generate_keywords_and_category(video_data_list)
+            print(f"GPT에서 받은 데이터: {gpt_result}")
+            return gpt_result
+        except Exception as e:
+            print(f"GPT 키워드 생성 중 오류: {str(e)}")
+            raise ValueError(f"키워드 재생성 오류: {str(e)}")
 
     except Exception as e:
         raise ValueError(f"Redis 또는 GPT 처리 오류: {str(e)}")
+
+
+# 키워드 재생성
+async def regenerate_keywords(db: Session, board_id: int, user_id: int):
+    """
+    보드의 키워드를 재생성하며, 보드별 Redis 데이터를 기반으로 GPT 요청.
+    """
+    board = get_board_by_id(db, board_id)
+
+    if not board:
+        raise ValueError("Board not found")
+
+    if board.user_id != user_id:
+        raise ValueError("권한이 없습니다.")
+
+    try:
+        # Redis에서 해당 보드의 채널 ID 목록 가져오기
+        redis_board_key = f"board_videos:{board_id}"
+        video_ids = RedisHandler.get_from_redis(redis_board_key)
+
+        if not video_ids:
+            raise ValueError(f"Redis에 보드 ID {board_id}의 동영상 데이터가 없습니다.")
+
+        # Redis에서 각 동영상 ID의 세부 정보 가져오기
+        video_data_list = []
+        for video_id in video_ids:
+            redis_video_key = f"youtube_video:{video_id}"
+            video_data = RedisHandler.get_from_redis(redis_video_key)
+            if not video_data:
+                print(f"Redis에 동영상 ID {video_id}의 데이터가 없습니다.")
+                continue
+            video_data_list.append(video_data)
+
+        if not video_data_list:
+            raise ValueError("GPT로 보낼 데이터가 없습니다.")
+
+        # GPT를 통해 키워드 및 카테고리 생성
+        gpt_result = await generate_keywords_and_category(video_data_list)
+        new_keywords = gpt_result.get("keywords", {})
+
+        # 키워드 갱신
+        board.keywords = json.dumps(new_keywords, ensure_ascii=False)
+
+        # 변경사항 저장
+        db.commit()
+        db.refresh(board)
+
+        return {
+            "board_id": board.id,
+            "new_keywords": new_keywords,
+        }
+
+    except Exception as e:
+        raise ValueError(f"키워드 재생성 오류: {str(e)}")

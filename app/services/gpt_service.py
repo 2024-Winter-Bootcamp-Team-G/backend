@@ -1,7 +1,7 @@
 import json
 from sqlalchemy.orm import Session
 from app.utils.redis_handler import RedisHandler
-from app.utils.gpt_handler import generate_keywords_for_video
+from app.utils.gpt_handler import generate_keywords_and_category
 from app.models.board import Board
 
 
@@ -13,7 +13,7 @@ def process_and_store_video_data(db: Session, redis_key: str, board_id: int):
         raise ValueError(f"Redis에서 {redis_key} 키에 해당하는 데이터가 없습니다.")
 
     # GPT로 데이터 분류
-    classification_result = generate_keywords_for_video(raw_data)
+    classification_result = generate_keywords_and_category(raw_data)
     classification_dict = json.loads(classification_result)
 
     # DB에 저장
@@ -32,3 +32,23 @@ def process_and_store_video_data(db: Session, redis_key: str, board_id: int):
         "category_ratio": board.category_ratio,
         "keyword": board.keyword,
     }
+
+async def process_user_videos(board_id: int) -> dict:
+    redis_key_board = f"user_videos:{board_id}"
+    video_ids = RedisHandler.get_from_redis(redis_key_board)
+
+    if not video_ids:
+        raise ValueError("Redis에 저장된 동영상 데이터가 없습니다.")
+
+    video_data_list = []
+    for video_id in json.loads(video_ids):
+        redis_key_video = f"youtube_video:{video_id}"
+        video_data = RedisHandler.get_from_redis(redis_key_video)
+
+        if video_data:
+            video_data_list.append(json.loads(video_data))
+
+    if not video_data_list:
+        raise ValueError("GPT로 보낼 데이터가 없습니다.")
+
+    return await generate_keywords_and_category(video_data_list)

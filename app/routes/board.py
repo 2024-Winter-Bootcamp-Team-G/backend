@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
-from app.services.board_service import get_boards, get_board_by_id, create_board
+from app.services.board_service import get_boards, get_board_by_id, create_board, regenerate_keywords
 from app.db import get_db
 from app.services.user_service import decode_access_token
 from fastapi.security import OAuth2PasswordBearer
-import json
 from app.utils.gpt_handler import match_board_ratio
 from fastapi.responses import JSONResponse
 
@@ -45,7 +44,12 @@ async def create_new_board(
     """
 
     try:
-        result = await create_board(db=db, board_data=board_data, user_id=current_user["id"], channel_ids=channel_ids)
+        await create_board(
+            db=db,
+            board_data=board_data,
+            user_id=current_user["id"],
+            channel_ids=channel_ids,
+        )
         return {"message": "보드가 성공적으로 생성되었습니다."}
     except Exception as e:
         raise HTTPException(
@@ -119,3 +123,32 @@ async def board_match(
                  "result": gpt_result}
     )
 
+    return gpt_result
+
+
+# 키워드 재생성
+@router.put("/{board_id}/keywords", response_model=dict)
+async def update_keywords(
+    board_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        # 키워드 재생성 로직 호출
+        result = await regenerate_keywords(db, board_id, current_user["id"])
+        return {
+            "message": "키워드가 성공적으로 재생성되었습니다.",
+            "result": result,
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"재생성 실패: {str(e)}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"키워드 재생성 중 오류: {str(e)}",
+        )
+
+# 이미지 재생성	PUT	/boards/image

@@ -20,11 +20,6 @@ from fastapi.responses import JSONResponse
 router = APIRouter(prefix="/auth", tags=["Users"])
 
 
-@router.get("/")
-def get_users():
-    return {"message": "List of users"}
-
-
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     if is_email_taken(user.email, db):
