@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     algorithm: str = os.getenv("ALGORITHM", "HS256")
     openai_api_key: str
 
+    # GCP 설정
+    gcp_bucket_name: str = os.getenv("GCP_BUCKET_NAME")
+    gcp_credentials: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
     # Celery 설정
     celery_broker_url: str = (
         f"pyamqp://guest:guest@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}:5672//"
