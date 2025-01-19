@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
 from app.services.board_service import get_boards, get_board_by_id, create_board
 from app.db import get_db
 from app.services.user_service import decode_access_token
 from fastapi.security import OAuth2PasswordBearer
+import json
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -15,20 +16,22 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     JWT 토큰에서 현재 사용자 정보 추출
     """
     payload = decode_access_token(token)
-    if "sub" not in payload:
+    user_id = payload.get("user_id")
+    email = payload.get("sub")
+    if not user_id or not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
-    return {"email": payload["sub"], "id": payload.get("user_id")}
+    return {"email": email, "id": user_id}
 
 
-@router.post("", response_model=dict)
+@router.post("", status_code=201)
 async def create_new_board(
     board_data: BoardCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-    channel_ids: list = None,
+    channel_ids: list[str] = Query(..., description="채널 ID 목록"),
 ):
     """
     보드 생성:
@@ -40,7 +43,7 @@ async def create_new_board(
 
     try:
         result = await create_board(db=db, board_data=board_data, user_id=current_user["id"], channel_ids=channel_ids)
-        return {"message": "보드 생성에 성공했습니다.", "result": result}
+        return {"message": "보드가 성공적으로 생성되었습니다."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -75,6 +78,10 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
     board = get_board_by_id(db, board_id)
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
+
+    print(f"[DEBUG] DB에서 가져온 카테고리 비율: {board.category_ratio}")
+    print(f"[DEBUG] DB에서 가져온 키워드: {board.keywords}")
+
     return {
         "message": "요청한 보드 정보가 성공적으로 반환되었습니다.",
         "result": {
@@ -82,7 +89,7 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
                 "board_name": board.board_name,
                 "image_url": board.image_url,
                 "category_ratio": board.category_ratio,
-                "keyword": board.keyword,
+                "keywords": board.keywords,
                 "created_at": board.created_at,
             }
         },

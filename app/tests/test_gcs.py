@@ -20,7 +20,7 @@ def test_upload_image_to_gcs(image_url, destination_path):
     GCS에 이미지를 업로드하고 업로드된 URL을 확인하는 테스트
     """
     try:
-        gcs_url = upload_image_to_gcs(image_url, destination_path, CREDENTIALS_PATH)
+        gcs_url = upload_image_to_gcs(image_url, destination_path)
         print(f"Uploaded Image URL: {gcs_url}")
         assert gcs_url.startswith(
             "https://storage.googleapis.com/"
@@ -56,9 +56,7 @@ def test_local_image_upload_to_gcs():
         f.write(os.urandom(1024))
 
     try:
-        gcs_url = upload_image_to_gcs(
-            local_file_path, destination_path, CREDENTIALS_PATH
-        )
+        gcs_url = upload_image_to_gcs(local_file_path, destination_path)
         print(f"Uploaded Local Image URL: {gcs_url}")
         assert gcs_url.startswith(
             "https://storage.googleapis.com/"

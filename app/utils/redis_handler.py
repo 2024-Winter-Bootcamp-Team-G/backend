@@ -18,9 +18,9 @@ class RedisHandler:
             else:
                 existing_videos = []
 
-            # 딕셔너리 리스트로
-            if isinstance(new_videos, dict):
-                new_videos = [new_videos]
+            # 새로운 데이터가 이미 JSON 문자열인 경우 처리
+            if isinstance(new_videos, str):
+                new_videos = json.loads(new_videos)
 
             # 중복 제거: 새로운 동영상만 필터링
             unique_videos = [

@@ -38,6 +38,8 @@ def is_email_taken(email: str, db: Session) -> bool:
 
 # JWT 토큰 생성 함수
 def create_access_token(data: dict, expires_delta: timedelta):
+    if "user_id" not in data or "sub" not in data:
+        raise ValueError("Missing required fields in token data: 'user_id' or 'sub'")
     try:
         to_encode = data.copy()
         expire = datetime.utcnow() + expires_delta
@@ -66,7 +68,7 @@ def login_user(user: User, db: Session):
             minutes=RedisSettings.refresh_token_expire_minutes
         )
         access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
+            data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
         )
         refresh_token = create_refresh_token(
             data={"sub": user.email}, expires_delta=refresh_token_expires
@@ -114,6 +116,12 @@ def decode_access_token(token: str):
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing user_id",
+            )
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
