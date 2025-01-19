@@ -43,7 +43,7 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
 
 
 async def match_board_ratio(board_sum_list: list):
-    # 여러 video_id의 데이터를 선택해 프롬프트로 전달
+    # 두 board_id를 프롬프트에 전달
     prompt = f"""
     #Instruction
     You are a YouTube Algorithm Expert. Your role is to analyze the keywords provided in two datasets, calculate the 
@@ -84,7 +84,7 @@ async def match_board_ratio(board_sum_list: list):
     키워드 데이터:
     {json.dumps(board_sum_list, ensure_ascii=False, indent=2)}
 
-    출력 형식:
+    출력 예시:
     {{
         "result": {{
             "user1_keywords": [keywords1, keywords2, keywords3, keywords4] ,
