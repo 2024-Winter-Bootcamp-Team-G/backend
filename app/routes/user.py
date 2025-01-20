@@ -43,7 +43,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/check-email")
+@router.get("/check-email")
 def check_email(email: str, db: Session = Depends(get_db)):
     if is_email_taken(email, db):
         return JSONResponse(
