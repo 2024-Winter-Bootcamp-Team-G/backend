@@ -12,11 +12,11 @@ class Board(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    board_name = Column(String, nullable=False)
-    image_url = Column(String, nullable=False)
-    category_ratio = Column(JSON, nullable=False)
-    keywords = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
+    board_name = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    category_ratio = Column(JSON, nullable=True)
+    keywords = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=True)
 
     # Relationship
     user = relationship("User", back_populates="boards")

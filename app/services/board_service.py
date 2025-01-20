@@ -2,12 +2,11 @@ from sqlalchemy.orm import Session
 from app.models.board import Board
 from app.schemas.board import BoardCreate, BoardResponse
 from app.utils import RedisHandler
-from app.utils.dalle_handler import generate_image_with_dalle
+from app.utils.dalle_handler import generate_image_with_dalle, delete_image_from_gcs
 from app.utils.gcs_handler import upload_image_to_gcs
 from app.utils.gpt_handler import generate_keywords_and_category
 from urllib.parse import urlparse
 from app.services.channel_service import fetch_cached_videos, fetch_video_details, fetch_videos_from_api
-from app.services.gpt_service import process_user_videos
 import time, json
 
 # 보드 생성
@@ -197,3 +196,66 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
 
     except Exception as e:
         raise ValueError(f"키워드 재생성 오류: {str(e)}")
+
+# 이미지 재생성
+def regenerate_image(board_id: int, user_id: int, db: Session):
+    """
+    이미지를 재생성하고 GCS 및 DB를 업데이트하는 함수
+    :param board_id: 재생성할 보드의 ID
+    :param user_id: 요청한 사용자의 ID
+    :param db: 데이터베이스 세션
+    """
+    # 1. 기존 보드 정보 가져오기
+    board = db.query(Board).filter(Board.id == board_id, Board.user_id == user_id).first()
+    if not board:
+        raise ValueError("해당 보드를 찾을 수 없습니다.")
+
+    # 2. 기존 이미지 삭제 (선택 사항, 필요 시 GCS에서 삭제)
+    if board.image_url:
+        image_url_value = str(board.image_url)  # 문자열로 명시적 변환
+        try:
+            delete_image_from_gcs(image_url_value)
+        except Exception as e:
+            print(f"기존 이미지 삭제 오류: {str(e)}")
+    else:
+        print("보드에 이미지 URL이 없습니다.")
+
+    # 3. DALL·E를 통한 새로운 이미지 생성
+    try:
+        # `board.category_ratio`와 `board.keywords` 값을 Python 기본 타입으로 변환
+        category_ratio = json.loads(board.category_ratio) if isinstance(board.category_ratio,
+                                                                        str) else board.category_ratio
+        keywords = json.loads(board.keywords) if isinstance(board.keywords, str) else board.keywords
+
+        # 이미지 생성
+        new_image_url = generate_image_with_dalle(category_ratio, keywords)
+        parsed_url = urlparse(new_image_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError(f"재생성된 이미지 URL이 유효하지 않습니다: {new_image_url}")
+    except Exception as e:
+        raise ValueError(f"DALL·E 이미지 재생성 오류: {str(e)}")
+
+
+
+    # 4. 새로운 이미지 GCS 업로드
+    max_retries = 3
+    gcs_image_url = None
+    for attempt in range(max_retries):
+        try:
+            gcs_image_url = upload_image_to_gcs(
+                new_image_url, f"boards/{user_id}/{board.board_name}.png"
+            )
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"GCS 업로드 실패, 재시도 중 ({attempt + 1}/{max_retries})...")
+                time.sleep(2)
+            else:
+                raise ValueError(f"GCS 업로드 오류: {str(e)}")
+
+    # 5. DB 업데이트
+    board.image_url = gcs_image_url
+    db.commit()
+    print(f"이미지가 재생성되고 업데이트되었습니다: {gcs_image_url}")
+
+    return gcs_image_url
