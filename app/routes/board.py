@@ -1,31 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
-from app.services.board_service import get_boards, get_board_by_id, create_board, regenerate_keywords, regenerate_image
 from app.db import get_db
-from app.services.user_service import decode_access_token
-from fastapi.security import OAuth2PasswordBearer
 from app.utils.gpt_handler import match_board_ratio
+from app.services.user_service import get_current_user
 from fastapi.responses import JSONResponse
-
+from app.services.board_service import (
+    get_boards,
+    get_board_by_id,
+    create_board,
+    regenerate_keywords,
+    regenerate_image
+)
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    """
-    JWT 토큰에서 현재 사용자 정보 추출
-    """
-    payload = decode_access_token(token)
-    user_id = payload.get("user_id")
-    email = payload.get("sub")
-    if not user_id or not email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-        )
-    return {"email": email, "id": user_id}
 
 
 @router.post("", status_code=201)
@@ -104,11 +92,7 @@ def read_board(board_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/match-ratio")
-async def board_match(
-        board_id1: int,
-        board_id2: int,
-        db: Session = Depends(get_db)
-        ):
+async def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_db)):
 
     board1 = get_board_by_id(db, board_id1)
     board2 = get_board_by_id(db, board_id2)
@@ -119,11 +103,12 @@ async def board_match(
 
     return JSONResponse(
         status_code=200,
-        content={"message": "알고리즘 일치율 계산에 성공했습니다.",
-                 "match_ratio": gpt_result,
-                 "board1_category_ratio": board1.category_ratio,
-                 "board2_category_ratio": board2.category_ratio
-                 }
+        content={
+            "message": "알고리즘 일치율 계산에 성공했습니다.",
+            "match_ratio": gpt_result,
+            "board1_category_ratio": board1.category_ratio,
+            "board2_category_ratio": board2.category_ratio,
+        },
     )
 
     return gpt_result

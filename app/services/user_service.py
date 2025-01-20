@@ -1,6 +1,7 @@
 import jwt
 from datetime import datetime, timedelta
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 from app.config import settings, RedisSettings
 from app.models import User
 from dotenv import load_dotenv
@@ -12,7 +13,6 @@ from app.utils.jwt_handler import (
     create_refresh_token,
     decode_token,
 )
-
 
 load_dotenv()
 
@@ -68,7 +68,8 @@ def login_user(user: User, db: Session):
             minutes=RedisSettings.refresh_token_expire_minutes
         )
         access_token = create_access_token(
-            data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
+            data={"sub": user.email, "user_id": user.id},
+            expires_delta=access_token_expires,
         )
         refresh_token = create_refresh_token(
             data={"sub": user.email}, expires_delta=refresh_token_expires
@@ -133,3 +134,21 @@ def decode_access_token(token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
         )
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    JWT 토큰에서 현재 사용자 정보 추출
+    """
+    payload = decode_access_token(token)
+    user_id = payload.get("user_id")
+    email = payload.get("sub")
+    if not user_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+    return {"email": email, "id": user_id}
