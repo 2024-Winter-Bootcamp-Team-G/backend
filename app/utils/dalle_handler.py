@@ -1,6 +1,6 @@
+from google.cloud import storage
 from openai import OpenAI
 from app.config import settings
-import requests
 
 client = OpenAI(api_key=settings.openai_api_key)
 
@@ -49,3 +49,20 @@ def generate_image_with_dalle(category_ratio: list[int], keywords: dict) -> str:
         return image_url
     except Exception as e:
         raise ValueError(f"Image generation failed: {str(e)}")
+
+# 이미지 재생성 시 기존 이미지 삭제
+def delete_image_from_gcs(image_url: str):
+    """
+    GCS에서 이미지를 삭제하는 함수
+    :param image_url: 삭제할 이미지의 GCS URL
+    """
+    bucket_name = "your-gcs-bucket-name"
+    blob_name = image_url.split(f"{bucket_name}/")[-1]
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    if blob.exists():
+        blob.delete()
+        print(f"GCS에서 이미지가 삭제되었습니다: {blob_name}")
+    else:
+        print(f"GCS에서 해당 이미지를 찾을 수 없습니다: {blob_name}")

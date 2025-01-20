@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import relationship
 from app.db import Base
 from datetime import datetime
@@ -12,6 +12,7 @@ class User(Base):
     email = Column(String(50), unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     user_name = Column(String(50), nullable=False)
+    profile_img_url = Column(Text, nullable=True)
     created_at = Column(
         DateTime, nullable=False, default=lambda: datetime.now(time_zone())
     )
