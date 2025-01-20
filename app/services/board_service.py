@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.orm import Session
 from app.models.board import Board
 from app.schemas.board import BoardCreate, BoardResponse
@@ -6,15 +8,23 @@ from app.utils.dalle_handler import generate_image_with_dalle
 from app.utils.gcs_handler import upload_image_to_gcs
 from app.utils.gpt_handler import generate_keywords_and_category
 from urllib.parse import urlparse
-from app.services.channel_service import fetch_cached_videos, fetch_video_details, fetch_videos_from_api
+from app.services.channel_service import (
+    fetch_cached_videos,
+    fetch_video_details,
+    fetch_videos_from_api,
+)
 from app.services.gpt_service import process_user_videos
 import time, json
 
+
 # 보드 생성
-async def create_board(db: Session, board_data: BoardCreate, user_id: int, channel_ids:list ) -> BoardResponse:
+async def create_board(
+    db: Session, board_data: BoardCreate, user_id: int, channel_ids: list
+) -> BoardResponse:
     # 1. DB에 Board 먼저 생성 (ID 확보)
     new_board = Board(
         user_id=user_id,
+        uuid=str(uuid.uuid4()),
         board_name=board_data.board_name or "Generated Board",
         image_url="",
         category_ratio=[],
@@ -29,7 +39,7 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int, chann
 
     # Redis 캐시 확인
     cached_results = fetch_cached_videos(channel_ids)
-    
+
     for result in cached_results:
         channel_id = result["채널ID"]
 
@@ -71,7 +81,7 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int, chann
     for attempt in range(max_retries):
         try:
             gcs_image_url = upload_image_to_gcs(
-                image_url, f"boards/{user_id}/{new_board.board_name}.png"
+                image_url, f"boards/{new_board.id}/{user_id}.png"
             )
             break
         except Exception as e:
@@ -86,6 +96,13 @@ async def create_board(db: Session, board_data: BoardCreate, user_id: int, chann
     new_board.category_ratio = category_ratio
     new_board.keywords = keywords
     db.commit()
+
+
+def get_board_by_uuid(db: Session, board_uuid: str):
+    """
+    보드 UUID를 사용하여 보드 데이터를 가져옵니다.
+    """
+    return db.query(Board).filter(Board.uuid == board_uuid).first()
 
 
 # 모든 보드 조회
