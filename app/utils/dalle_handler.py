@@ -1,6 +1,8 @@
 from google.cloud import storage
 from openai import OpenAI
 from app.config import settings
+from urllib.parse import urlparse
+from google.auth import default
 
 client = OpenAI(api_key=settings.openai_api_key)
 
@@ -56,13 +58,27 @@ def delete_image_from_gcs(image_url: str):
     GCS에서 이미지를 삭제하는 함수
     :param image_url: 삭제할 이미지의 GCS URL
     """
-    bucket_name = "your-gcs-bucket-name"
-    blob_name = image_url.split(f"{bucket_name}/")[-1]
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    if blob.exists():
-        blob.delete()
-        print(f"GCS에서 이미지가 삭제되었습니다: {blob_name}")
-    else:
-        print(f"GCS에서 해당 이미지를 찾을 수 없습니다: {blob_name}")
+    bucket_name = "team-g-bucket"
+    try:
+        # URL 파싱 및 검증
+        parsed_url = urlparse(image_url)
+        if not parsed_url.path.startswith(f"/{bucket_name}/"):
+            raise ValueError(f"Invalid GCS URL: {image_url}")
+
+        # Blob 이름 추출
+        blob_name = parsed_url.path.split(f"/{bucket_name}/")[-1]
+
+        # GCS 클라이언트 초기화
+        credentials, project = default()
+        client = storage.Client(credentials=credentials, project=project)
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+
+        # Blob 존재 여부 확인 및 삭제
+        if blob.exists():
+            blob.delete()
+            print(f"GCS에서 이미지가 삭제되었습니다: {blob_name}")
+        else:
+            print(f"GCS에서 해당 이미지를 찾을 수 없습니다: {blob_name}")
+    except Exception as e:
+        raise RuntimeError(f"GCS 이미지 삭제 중 오류 발생: {str(e)}")
