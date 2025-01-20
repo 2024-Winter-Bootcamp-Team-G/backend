@@ -17,7 +17,7 @@ class Board(Base):
     image_url = Column(String, nullable=True)
     category_ratio = Column(JSON, nullable=True)
     keywords = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(KST), nullable=True)
 
     # Relationship
     user = relationship("User", back_populates="boards")

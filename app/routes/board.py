@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.schemas.board import BoardCreate
+from app.db import get_db
+from app.utils.gpt_handler import match_board_ratio
+from app.services.user_service import get_current_user
+from fastapi.responses import JSONResponse
 from app.services.board_service import (
     get_boards,
     get_board_by_id,
     create_board,
     regenerate_keywords,
+    regenerate_image
 )
-from app.db import get_db
-from app.utils.gpt_handler import match_board_ratio
-from app.services.user_service import get_current_user
-from fastapi.responses import JSONResponse
-
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
 
@@ -139,5 +139,26 @@ async def update_keywords(
             detail=f"키워드 재생성 중 오류: {str(e)}",
         )
 
-
-# 이미지 재생성	PUT	/boards/image
+# 이미지 재생성
+@router.put("/{board_id}/image")
+async def regenerate_board_image(
+    board_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    """
+    이미지 재생성 API
+    :param board_id: 보드 ID
+    :param db: 데이터베이스 세션
+    :param user: 현재 사용자 정보 (의존성 주입)
+    :return: 새로 생성된 이미지 URL
+    """
+    try:
+        # 재생성 로직 호출
+        new_image_url = regenerate_image(board_id, user["id"], db)
+        return {"message": "이미지가 성공적으로 재생성되었습니다.", "new_image_url": new_image_url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"재생성 실패: {str(e)}",
+        )

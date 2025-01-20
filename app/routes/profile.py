@@ -1,8 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from google.cloud import storage
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.models import Board
+from app.models.user import User
 import os
 import uuid
 from app.config import settings
@@ -17,18 +17,13 @@ def upload_profile_picture(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    """
-        프로필 사진을 업로드하고 PostgreSQL에 URL 저장.
-        """
+
     # 사용자 데이터베이스에서 검색
-    user_board = db.query(Board).filter(Board.user_id == user_id).first()
-    if not user_board:
-        return JSONResponse(
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
             status_code=404,
-            content={
-                "message": "사용자 정보를 찾을 수 없습니다.",
-                "result": None,
-            },
+            detail="사용자 정보를 찾을 수 없습니다.",
         )
 
     # GCS 클라이언트 초기화
@@ -59,8 +54,8 @@ def upload_profile_picture(
         method="GET"
     )
 
-    # DB에 URL 저장
-    user_board.profile_img_url = signed_url
+    # 6. DB에 URL 저장
+    user.profile_img_url = signed_url
     db.commit()
 
     return {
