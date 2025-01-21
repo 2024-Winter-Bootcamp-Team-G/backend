@@ -38,7 +38,7 @@ def upload_image_to_gcs(image_url: str, destination_path: str) -> str:
         blob.upload_from_string(image_data, content_type="image/jpeg")
 
         # 업로드된 URL 반환
-        gcs_url = f"https://storage.googleapis.com/{bucket_name}/{destination_path}"
+        gcs_url = f"https://storage.cloud.google.com/{bucket_name}/{destination_path}"
         print(f"GCS 업로드 성공: {gcs_url}")
         return gcs_url
 
