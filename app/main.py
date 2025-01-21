@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.db import Base, engine
 from app.routes import board, user, auth, subscriptions, share, celery_tasks, profile
 from app.init_db import init_db
+from prometheus_fastapi_instrumentator import Instrumentator
 
 Base.metadata.create_all(bind=engine)
 init_db()
@@ -32,3 +33,5 @@ app.include_router(celery_tasks.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI Backend"}
+
+Instrumentator().instrument(app).expose(app)
