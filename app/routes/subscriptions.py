@@ -8,12 +8,12 @@ router = APIRouter(prefix="/preferences", tags=["Channel Preferences"])
 
 
 @router.get("/channel-collect")
-def get_subscriptions(access_token: str = Cookie(None)):
-    if not access_token:
+def get_subscriptions(google_access_token: str = Cookie(None)):
+    if not google_access_token:
         raise HTTPException(status_code=401, detail="Unauthorized: No access token provided")
 
     # Redis 캐싱 키
-    redis_key = f"subscriptions:{access_token}"
+    redis_key = f"subscriptions:{google_access_token}"
 
 
     # Redis에서 캐싱된 데이터 확인
@@ -30,7 +30,7 @@ def get_subscriptions(access_token: str = Cookie(None)):
         )
 
     params = {"part": "snippet", "mine": "true", "maxResults": 50}
-    data = youtube_api_request("subscriptions", access_token, params)
+    data = youtube_api_request("subscriptions", google_access_token, params)
 
     if "error" in data:
         return JSONResponse(
