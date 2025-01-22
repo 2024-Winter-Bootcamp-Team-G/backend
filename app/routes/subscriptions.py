@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Cookie, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from app.utils.utils import youtube_api_request
 from app.utils.redis_handler import redis_client
@@ -8,9 +8,13 @@ router = APIRouter(prefix="/preferences", tags=["Channel Preferences"])
 
 
 @router.get("/channel-collect")
-def get_subscriptions(access_token: str):
+def get_subscriptions(access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Unauthorized: No access token provided")
+
     # Redis 캐싱 키
     redis_key = f"subscriptions:{access_token}"
+
 
     # Redis에서 캐싱된 데이터 확인
     cached_data = redis_client.get(redis_key)

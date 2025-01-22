@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 import requests
 from app.config import GoogleConfig
 
@@ -36,17 +36,26 @@ def auth_callback(request: Request):
         "grant_type": "authorization_code",
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
     response = requests.post(token_url, data=payload, headers=headers)
 
     if response.status_code != 200:
         raise HTTPException(status_code=500, detail="토큰을 가져오는 데 실패했습니다.")
 
     token_data = response.json()
+    access_token = token_data.get("access_token")
 
-    return JSONResponse(
-        content={
-            "message": "액세스 토큰을 성공적으로 가져왔습니다.",
-            "result": token_data,
-        }
+    if not access_token:
+        raise HTTPException(status_code=500, detail="Access token not found")
+
+    # 2. HttpOnly 쿠키 설정
+    frontend_url = "http://localhost:5173/board"
+    response = RedirectResponse(url=frontend_url)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax"
     )
+
+    return response
