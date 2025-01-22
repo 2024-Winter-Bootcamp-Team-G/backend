@@ -6,7 +6,6 @@ from app.models.user import User
 import os
 import uuid
 from app.config import settings
-from datetime import timedelta
 from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
@@ -46,21 +45,16 @@ def upload_profile_picture(
 
     # 파일 업로드
     blob.upload_from_file(file.file, content_type=file.content_type)
+    blob.make_public()
+    public_url = blob.public_url
 
-    # URL 생성
-    signed_url = blob.generate_signed_url(
-        version="v4",
-        expiration=3600,  # 1시간(3600초) 동안 유효
-        method="GET"
-    )
-
-    # 6. DB에 URL 저장
-    user.profile_img_url = signed_url
+    # DB에 URL 저장
+    user.profile_img_url = public_url
     db.commit()
 
     return {
         "message": "프로필 사진이 업로드 되고 URL이 저장되었습니다.",
-        "profile_img_url": signed_url
+        "profile_img_url": public_url
     }
 
 
@@ -96,20 +90,15 @@ async def get_profile_picture(user_id: str, folder: str = "profile_pictures"):
         blob = max(blobs, key=lambda b: b.updated)
         print(f"Selected blob: {blob.name}, last updated at: {blob.updated}")
 
-        # 4. 서명된 URL 생성
-        expiration_hours = getattr(settings, "gcs_signed_url_expiration_hours", 1)
-        print(f"Generating signed URL with expiration: {expiration_hours} hours...")
-        signed_url = blob.generate_signed_url(
-            version="v4",
-            expiration=timedelta(hours=expiration_hours),
-            method="GET"
-        )
-        print(f"Generated signed URL: {signed_url}")
+        # 4. Public URL 가져오기
+        print("Fetching public URL...")
+        public_url = blob.public_url
+        print(f"Public URL: {public_url}")
 
         # 5. 결과 반환
         return {
             "message": "프로필 url을 성공적으로 반환했습니다.",
-            "url": signed_url
+            "url": public_url
         }
 
     except Exception as e:
@@ -120,3 +109,4 @@ async def get_profile_picture(user_id: str, folder: str = "profile_pictures"):
                 "error": str(e),
             },
         )
+
