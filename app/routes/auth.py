@@ -51,7 +51,7 @@ def auth_callback(request: Request):
     frontend_url = "http://localhost:5173/board"
     response = RedirectResponse(url=frontend_url)
     response.set_cookie(
-        key="access_token",
+        key="google_access_token", # 쿠키
         value=access_token,
         httponly=True,
         secure=False,
