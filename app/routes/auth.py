@@ -43,10 +43,10 @@ def auth_callback(request: Request):
         raise HTTPException(status_code=500, detail="토큰을 가져오는 데 실패했습니다.")
 
     token_data = response.json()
-    access_token = token_data.get("access_token")
-    if not access_token:
-        raise HTTPException(status_code=500, detail="액세스 토큰을 찾을 수 없습니다.")
 
-    # 프론트엔드로 리다이렉트
-    redirect_url = f"http://localhost:5173/board?access_token={access_token}"
-    return RedirectResponse(redirect_url)
+    return JSONResponse(
+        content={
+            "message": "액세스 토큰을 성공적으로 가져왔습니다.",
+            "result": token_data,
+        }
+    )
