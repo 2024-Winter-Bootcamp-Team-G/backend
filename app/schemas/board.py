@@ -7,21 +7,12 @@ import pytz
 KST = pytz.timezone("Asia/Seoul")
 
 
-class BoardBase(BaseModel):
+class BoardResponse(BaseModel):
+    id: int
     board_name: Optional[str]
     image_url: Optional[str]
     category_ratio: Optional[List[int]]
     keywords: Optional[Dict[str, List[str]]]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class BoardCreate(BoardBase):
-    redis_key: Optional[str] = None
-
-
-class BoardResponse(BoardBase):
-    id: int
     created_at: datetime = Field(default_factory=lambda: datetime.now(KST))
 
     @root_validator(pre=True)

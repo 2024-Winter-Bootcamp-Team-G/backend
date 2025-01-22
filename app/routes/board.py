@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from app.schemas.board import BoardCreate
 from app.db import get_db
 from app.utils.gpt_handler import match_board_ratio
 from app.services.user_service import get_current_user
@@ -18,7 +17,6 @@ router = APIRouter(prefix="/boards", tags=["Boards"])
 
 @router.post("", status_code=201)
 async def create_new_board(
-    board_data: BoardCreate,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     channel_ids: list[str] = Query(..., description="채널 ID 목록"),
@@ -34,7 +32,6 @@ async def create_new_board(
     try:
         await create_board(
             db=db,
-            board_data=board_data,
             user_id=current_user["id"],
             channel_ids=channel_ids,
         )

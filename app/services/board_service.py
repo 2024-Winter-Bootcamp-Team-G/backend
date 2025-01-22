@@ -1,7 +1,7 @@
 import uuid, time, json
 from sqlalchemy.orm import Session
 from app.models.board import Board
-from app.schemas.board import BoardCreate, BoardResponse
+from app.schemas.board import BoardResponse
 from app.utils import RedisHandler
 from app.utils.dalle_handler import generate_image_with_dalle, delete_image_from_gcs
 from app.utils.gcs_handler import upload_image_to_gcs
@@ -16,13 +16,13 @@ from app.services.channel_service import (
 
 # 보드 생성
 async def create_board(
-    db: Session, board_data: BoardCreate, user_id: int, channel_ids: list
+    db: Session, user_id: int, channel_ids: list
 ) -> BoardResponse:
     # 1. DB에 Board 먼저 생성 (ID 확보)
     new_board = Board(
         user_id=user_id,
         uuid=str(uuid.uuid4()),
-        board_name=board_data.board_name or "Generated Board",
+        board_name="Generated Board",
         image_url="",
         category_ratio=[],
         keywords={},
