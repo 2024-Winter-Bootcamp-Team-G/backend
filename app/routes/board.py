@@ -9,7 +9,7 @@ from app.services.board_service import (
     get_board_by_id,
     create_board,
     regenerate_keywords,
-    regenerate_image
+    regenerate_image,
 )
 
 router = APIRouter(prefix="/boards", tags=["Boards"])
@@ -30,12 +30,15 @@ async def create_new_board(
     """
 
     try:
-        await create_board(
+        new_board = await create_board(
             db=db,
             user_id=current_user["id"],
             channel_ids=channel_ids,
         )
-        return {"message": "보드가 성공적으로 생성되었습니다."}
+        return {
+            "message": "보드가 성공적으로 생성되었습니다.",
+            "board_id": new_board.id,
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -136,12 +139,11 @@ async def update_keywords(
             detail=f"키워드 재생성 중 오류: {str(e)}",
         )
 
+
 # 이미지 재생성
 @router.put("/{board_id}/image")
 async def regenerate_board_image(
-    board_id: int,
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user)
+    board_id: int, db: Session = Depends(get_db), user: dict = Depends(get_current_user)
 ):
     """
     이미지 재생성 API
@@ -153,7 +155,10 @@ async def regenerate_board_image(
     try:
         # 재생성 로직 호출
         new_image_url = regenerate_image(board_id, user["id"], db)
-        return {"message": "이미지가 성공적으로 재생성되었습니다.", "new_image_url": new_image_url}
+        return {
+            "message": "이미지가 성공적으로 재생성되었습니다.",
+            "new_image_url": new_image_url,
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
