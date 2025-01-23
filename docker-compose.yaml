@@ -79,7 +79,6 @@ services:
     depends_on:
       - rabbitmq
       - redis-service
-    image: python:3.12-slim
     command: ["celery", "-A", "app.utils.celery_app", "worker", "--loglevel=info"]
     env_file:
       - .env
