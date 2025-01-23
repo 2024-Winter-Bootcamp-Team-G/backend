@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
-import requests
 from app.config import GoogleConfig
+from app.services.google_service import exchange_code_for_token, get_cached_or_request_subscriptions
 
 router = APIRouter(prefix="/googleauth", tags=["Authentication"])
 
@@ -22,40 +22,19 @@ def login():
 
 
 @router.get("/callback")
-def auth_callback(request: Request):
+def auth_and_get_subscriptions(request: Request):
+    # 인가코드 받기
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code not provided")
 
-    token_url = GoogleConfig.GOOGLE_TOKEN_URL
-    payload = {
-        "client_id": GoogleConfig.CLIENT_ID,
-        "client_secret": GoogleConfig.CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": GoogleConfig.REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    response = requests.post(token_url, data=payload, headers=headers)
+    # 액세스 토큰 획득
+    access_token = exchange_code_for_token(code)
 
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="토큰을 가져오는 데 실패했습니다.")
+    # 구독 목록을 가져와서 redis에 캐싱
+    subscription_data = get_cached_or_request_subscriptions(access_token)
 
-    token_data = response.json()
-    access_token = token_data.get("access_token")
-
-    if not access_token:
-        raise HTTPException(status_code=500, detail="Access token not found")
-
-    # 2. HttpOnly 쿠키 설정
-    frontend_url = "http://localhost:5173/board"
-    response = RedirectResponse(url=frontend_url)
-    response.set_cookie(
-        key="google_access_token", # 쿠키
-        value=access_token,
-        httponly=True,
-        secure=False,
-        samesite="lax"
-    )
-
-    return response
+    # 프론트엔드로 리다이렉트, 주소 뒤에 data_id 반환
+    data_id = subscription_data["data_id"]
+    redirect_url = f"http://localhost:5173/board?data_id={data_id}"
+    return RedirectResponse(redirect_url)
