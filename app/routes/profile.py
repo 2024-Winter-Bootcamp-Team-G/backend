@@ -11,8 +11,6 @@ from fastapi.responses import JSONResponse
 from app.services.user_service import get_current_user
 from sqlalchemy import select
 from app.utils import verify_password, hash_password
-from app.services.user_service import logout_user
-from app.utils.redis_handler import RedisHandler
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -111,7 +109,7 @@ async def get_profile_picture(current_user: dict = Depends(get_current_user)):
             },
         )
 
-@router.put("/name_change")
+@router.put("/name-change")
 def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     user_id = current_user["id"]
 
@@ -135,7 +133,7 @@ def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_cu
     )
 
 
-@router.put("/password_change")
+@router.put("/password-change")
 def password_change(password_data: UpdatePasswordSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     user_id = current_user["id"]
 
