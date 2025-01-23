@@ -39,5 +39,4 @@ class UpdateUserSchema(BaseModel):
     name: str = Field(..., max_length=50)
 
 class UpdatePasswordSchema(BaseModel):
-    current_password: str
     new_password: str

@@ -12,7 +12,7 @@ from app.services.user_service import get_current_user
 from sqlalchemy import select
 from app.utils import verify_password, hash_password
 
-router = APIRouter(prefix="/profiles", tags=["Profile"])
+router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
 @router.put("/upload") # put
 def upload_profile_picture(
@@ -65,6 +65,73 @@ def upload_profile_picture(
     }
 
 
+@router.put("/name-change")
+def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user["id"]
+
+    query = select(User).where(User.id == user_id)
+    result = db.execute(query)
+    user = result.scalars().first()
+
+    if user_data.name:
+        user.name = user_data.name
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)  # 업데이트된 데이터를 반환
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "이름이 변경됐습니다.",
+            "user_name": user_data.name
+        },
+    )
+
+
+@router.put("/password-change")
+def password_change(password_data: UpdatePasswordSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user["id"]
+
+    query = select(User).where(User.id == user_id)
+    result = db.execute(query)
+    user = result.scalars().first()
+
+    user.hashed_password = hash_password(password_data.new_password)
+
+    db.add(user)
+    db.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "비밀번호가 성공적으로 변경되었습니다.",
+            "result": None
+        }
+    )
+
+
+@router.get("/get-name")
+def get_user_name(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_id = current_user["id"]
+    user = db.query(User).filter(User.id == user_id).first()
+    name = user.user_name
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="사용자 정보를 찾을 수 없습니다.",
+        )
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "사용자 정보를 가져왔습니다.",
+            "name": name
+        }
+    )
+
+
 @router.get("/{user_id}")
 async def get_profile_picture(current_user: dict = Depends(get_current_user)):
 
@@ -108,53 +175,3 @@ async def get_profile_picture(current_user: dict = Depends(get_current_user)):
                 "error": str(e),
             },
         )
-
-@router.put("/name-change")
-def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    user_id = current_user["id"]
-
-    query = select(User).where(User.id == user_id)
-    result = db.execute(query)
-    user = result.scalars().first()
-
-    if user_data.name:
-        user.name = user_data.name
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)  # 업데이트된 데이터를 반환
-
-    return JSONResponse(
-        status_code=200,
-        content={
-            "message": "이름이 변경됐습니다.",
-            "user_name": user_data.name
-        },
-    )
-
-
-@router.put("/password-change")
-def password_change(password_data: UpdatePasswordSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    user_id = current_user["id"]
-
-    query = select(User).where(User.id == user_id)
-    result = db.execute(query)
-    user = result.scalars().first()
-
-    if not verify_password(password_data.current_password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
-
-    hashed_new_password = hash_password(password_data.new_password)
-
-    user.hashed_password = hashed_new_password
-    db.add(user)
-    db.commit()
-
-    return JSONResponse(
-        status_code=200,
-        content={
-            "message": "비밀번호가 성공적으로 변경되었습니다.",
-            "result": None
-        }
-    )
-
