@@ -15,7 +15,7 @@ from app.services.board_service import (
 router = APIRouter(prefix="/boards", tags=["Boards"])
 
 
-@router.post("", status_code=201)
+@router.post("", response_model=dict)
 async def create_new_board(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -30,14 +30,14 @@ async def create_new_board(
     """
 
     try:
-        new_board = await create_board(
+        result = await create_board(
             db=db,
             user_id=current_user["id"],
             channel_ids=channel_ids,
         )
         return {
             "message": "보드가 성공적으로 생성되었습니다.",
-            "board_id": new_board.id,
+            "result": result
         }
     except Exception as e:
         raise HTTPException(

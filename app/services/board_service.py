@@ -1,4 +1,6 @@
 import uuid, time, json
+from typing import Any
+
 from sqlalchemy.orm import Session
 from app.models.board import Board
 from app.schemas.board import BoardResponse
@@ -17,7 +19,7 @@ from app.services.channel_service import (
 # 보드 생성
 async def create_board(
     db: Session, user_id: int, channel_ids: list
-) -> BoardResponse:
+) -> dict:
     # 1. DB에 Board 먼저 생성 (ID 확보)
     new_board = Board(
         user_id=user_id,
@@ -93,6 +95,12 @@ async def create_board(
     new_board.category_ratio = category_ratio
     new_board.keywords = keywords
     db.commit()
+
+    return {
+        "board": {
+            "id": new_board.id,
+        },
+    }
 
 
 def get_board_by_uuid(db: Session, board_uuid: str):
