@@ -74,7 +74,7 @@ def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_cu
     user = result.scalars().first()
 
     if user_data.name:
-        user.name = user_data.name
+        user.user_name = user_data.name
 
     db.add(user)
     db.commit()
@@ -84,7 +84,7 @@ def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_cu
         status_code=200,
         content={
             "message": "이름이 변경됐습니다.",
-            "user_name": user_data.name
+            "user_name": user.user_name
         },
     )
 
