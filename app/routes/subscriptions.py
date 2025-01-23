@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Cookie, Depends, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import JSONResponse
 from app.utils.utils import youtube_api_request
 from app.utils.redis_handler import redis_client
