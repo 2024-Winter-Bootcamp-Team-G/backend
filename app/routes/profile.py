@@ -12,7 +12,7 @@ from app.services.user_service import get_current_user
 from sqlalchemy import select
 from app.utils import verify_password, hash_password
 
-router = APIRouter(prefix="/profile", tags=["Profile"])
+router = APIRouter(prefix="/profiles", tags=["Profile"])
 
 @router.put("/upload") # put
 def upload_profile_picture(
