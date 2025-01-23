@@ -152,3 +152,5 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             detail="Invalid authentication credentials",
         )
     return {"email": email, "id": user_id}
+
+

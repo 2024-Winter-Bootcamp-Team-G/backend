@@ -3,11 +3,16 @@ from google.cloud import storage
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.user import User
+from app. schemas.user import UpdateUserSchema, UpdatePasswordSchema
 import os
 import uuid
 from app.config import settings
 from fastapi.responses import JSONResponse
 from app.services.user_service import get_current_user
+from sqlalchemy import select
+from app.utils import verify_password, hash_password
+from app.services.user_service import logout_user
+from app.utils.redis_handler import RedisHandler
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -105,3 +110,53 @@ async def get_profile_picture(current_user: dict = Depends(get_current_user)):
                 "error": str(e),
             },
         )
+
+@router.put("/name_change")
+def name_change(user_data: UpdateUserSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user["id"]
+
+    query = select(User).where(User.id == user_id)
+    result = db.execute(query)
+    user = result.scalars().first()
+
+    if user_data.name:
+        user.name = user_data.name
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)  # 업데이트된 데이터를 반환
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "이름이 변경됐습니다.",
+            "user_name": user_data.name
+        },
+    )
+
+
+@router.put("/password_change")
+def password_change(password_data: UpdatePasswordSchema, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = current_user["id"]
+
+    query = select(User).where(User.id == user_id)
+    result = db.execute(query)
+    user = result.scalars().first()
+
+    if not verify_password(password_data.current_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+
+    hashed_new_password = hash_password(password_data.new_password)
+
+    user.hashed_password = hashed_new_password
+    db.add(user)
+    db.commit()
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "비밀번호가 성공적으로 변경되었습니다.",
+            "result": None
+        }
+    )
+
