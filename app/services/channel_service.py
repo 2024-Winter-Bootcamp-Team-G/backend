@@ -6,36 +6,6 @@ import json
 youtube_api_key = GoogleConfig.API_KEY
 
 
-def fetch_channel_info(board_id: int, channel_ids: list[str]) -> list[dict]:
-    results = []
-
-    # Step 1: Redis 캐시 확인
-    cached_results = fetch_cached_videos(channel_ids)
-
-    for result in cached_results:
-        channel_id = result["채널ID"]
-
-        # 캐시된 데이터 있으면 바로 추가
-        if result["is_cached"]:
-            results.append(result)
-            continue
-
-        # Step 2: API 호출하여 동영상 ID 가져오기
-        video_ids = fetch_videos_from_api(board_id, channel_id)
-        if not video_ids:
-            results.append({"채널ID": channel_id, "최신동영상목록": []})
-            continue
-
-        # redis 캐싱 확인
-
-        # Step 3: 동영상 세부 정보 가져오기
-        video_details = fetch_video_details(video_ids)
-
-        results.append({"채널ID": channel_id, "최신동영상목록": video_details})
-
-    return results
-
-
 def fetch_cached_videos(channel_ids: list[str]) -> list[dict]:
     results = []
     for channel_id in channel_ids:

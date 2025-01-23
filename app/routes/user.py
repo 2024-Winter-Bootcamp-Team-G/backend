@@ -5,10 +5,9 @@ from app.models import User
 from app.schemas.user import (
     UserCreate,
     UserResponse,
-    UserLoginResponse,
-    UserLoginRequest,
+    UserLoginResponse
 )
-from app.utils import hash_password, verify_password
+from app.utils import verify_password
 from app.services.user_service import (
     login_user,
     logout_user,
