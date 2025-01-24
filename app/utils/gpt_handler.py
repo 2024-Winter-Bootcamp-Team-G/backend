@@ -13,6 +13,9 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
     Analysis of data:
     - Generate the name of each category and 3 related keywords in Korean.
     - Calculates the ratio of each category based on all data.
+    - Even if the category ID is the same, you must reclassify it on your own and provide 4 categories and 3 keywords for each category unconditionally.
+    - category 1-4: Directly judge the category name and set it as a key
+    - Keyword 1-3: Determine the keyword directly and set it to value
 
     동영상 데이터:
     {json.dumps(video_data_list, ensure_ascii=False, indent=2)}

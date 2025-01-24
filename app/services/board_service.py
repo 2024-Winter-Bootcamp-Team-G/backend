@@ -1,9 +1,6 @@
 import uuid, time, json
-from typing import Any
-
 from sqlalchemy.orm import Session
 from app.models.board import Board
-from app.schemas.board import BoardResponse
 from app.utils import RedisHandler
 from app.utils.dalle_handler import generate_image_with_dalle, delete_image_from_gcs
 from app.utils.gcs_handler import upload_image_to_gcs
@@ -52,8 +49,9 @@ async def create_board(
         if not video_ids:
             results.append({"채널ID": channel_id, "최신동영상목록": []})
             continue
+        print(f"[DEBUG] API 호출하여 동영상 ID 가져오기: {video_ids}")
+        # redis에 동영상 세부 정보가 캐싱되어 있는지 확인
 
-        # redis 캐싱 확인
 
         # 동영상 세부 정보 가져오기
         video_details = fetch_video_details(video_ids)
@@ -136,7 +134,7 @@ async def process_channel_data(channel_ids: list[str]):
         for channel_id in channel_ids:
             # Redis에서 채널 ID 기반 최신 동영상 목록 가져오기
             redis_channel_key = f"youtube_channel:{channel_id}"
-            video_ids = RedisHandler.get_from_redis(redis_channel_key)
+            video_ids = RedisHandler.get_from_redis_list(redis_channel_key)
 
             if not video_ids:
                 print(f"Redis에 채널 ID {channel_id}의 동영상 데이터가 없습니다.")
@@ -145,7 +143,8 @@ async def process_channel_data(channel_ids: list[str]):
             # Redis에서 각 동영상 ID의 세부 정보 가져오기
             for video_id in video_ids:
                 redis_video_key = f"youtube_video:{video_id}"
-                video_data = RedisHandler.get_from_redis(redis_video_key)
+                video_data = RedisHandler.get_video_details_from_redis(redis_video_key)
+                print(f"[DEBUG] video_data: {video_data}")
                 if not video_data:
                     print(f"Redis에 동영상 ID {video_id}의 데이터가 없습니다.")
                     continue
@@ -183,7 +182,7 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
     try:
         # Redis에서 해당 보드의 채널 ID 목록 가져오기
         redis_board_key = f"board_videos:{board_id}"
-        video_ids = RedisHandler.get_from_redis(redis_board_key)
+        video_ids = RedisHandler.get_from_redis_list(redis_board_key)
 
         if not video_ids:
             raise ValueError(f"Redis에 보드 ID {board_id}의 동영상 데이터가 없습니다.")
@@ -192,7 +191,7 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
         video_data_list = []
         for video_id in video_ids:
             redis_video_key = f"youtube_video:{video_id}"
-            video_data = RedisHandler.get_from_redis(redis_video_key)
+            video_data = RedisHandler.get_from_redis_list(redis_video_key)
             if not video_data:
                 print(f"Redis에 동영상 ID {video_id}의 데이터가 없습니다.")
                 continue
