@@ -9,7 +9,7 @@ redis_client = redis.Redis(
 
 class RedisHandler:
     @staticmethod
-    def save_to_redis(key: str, new_videos: list[dict], expire: int = 3600):
+    def save_to_redis_list(key: str, new_videos: list[dict], expire: int = 3600):
         try:
             # 기존 데이터를 가져옴
             existing_data = redis_client.get(key)
@@ -38,7 +38,7 @@ class RedisHandler:
             print(f"Redis 저장 실패: {e}")
 
     @staticmethod
-    def get_from_redis(key: str):
+    def get_from_redis_list(key: str):
         """
         Redis에서 데이터를 가져오기
         """
@@ -50,6 +50,45 @@ class RedisHandler:
         except Exception as e:
             print(f"Redis에서 데이터 가져오기 실패: {e}")
             return None
+
+    @staticmethod
+    def save_video_details_to_redis(redis_key: str, data: dict):
+        """
+        Redis에 딕셔너리 데이터를 저장하는 함수.
+
+        Args:
+            key (str): Redis 키
+            data (dict): 저장할 데이터
+        """
+        try:
+            for field, value in data.items():
+                redis_client.hset(redis_key, field, json.dumps(value))
+            print(f"데이터가 Redis에 저장되었습니다: {redis_key}")
+        except Exception as e:
+            raise ValueError(f"Redis 저장 중 오류 발생: {str(e)}")
+
+
+    @staticmethod
+    def get_video_details_from_redis(redis_key: str) -> dict:
+        """
+        Redis 해시에서 동영상 세부 정보를 가져오는 함수.
+
+        Args:
+            redis_key (str): Redis 키
+        Returns:
+            dict: Redis 해시에 저장된 데이터
+        """
+        try:
+            # Redis 해시의 모든 필드를 가져옴
+            data = redis_client.hgetall(redis_key)
+            print(f"[DEBUG] REDIS 해시 조회: {data}")
+
+            # JSON 문자열로 저장된 값을 디코딩
+            return {field: json.loads(value) for field, value in data.items()}
+        except Exception as e:
+            print(f"Redis 가져오기 중 오류 발생: {e}")
+            raise e
+
 
     @staticmethod
     def get_youtube_raw_data(key: str):

@@ -10,7 +10,7 @@ def fetch_cached_videos(channel_ids: list[str]) -> list[dict]:
     results = []
     for channel_id in channel_ids:
         redis_key_channel = f"youtube_channel:{channel_id}"
-        cached_video_ids = RedisHandler.get_from_redis(redis_key_channel)
+        cached_video_ids = RedisHandler.get_from_redis_list(redis_key_channel)
 
         if cached_video_ids:
             latest_videos = (
@@ -51,18 +51,23 @@ def fetch_videos_from_api(board_id: int, channel_id: str) -> list[str]:
 
     search_data = search_response.json()
     video_ids = [item["id"]["videoId"] for item in search_data.get("items", [])]
+    print(f"[DEBUG] YouTube API에서 가져온 video_ids: {video_ids}")
 
     # Redis에 채널별 데이터 저장
     redis_key_channel = f"youtube_channel:{channel_id}"
-    RedisHandler.save_to_redis(redis_key_channel, json.dumps(video_ids))
+    RedisHandler.save_to_redis_list(redis_key_channel, json.dumps(video_ids))
+    print(f"[DEBUG] Redis에 youtube_channel:{channel_id} 저장 완료 (중복 제거 후 {len(video_ids)}개 저장).")
 
     # Redis에 보드별 데이터 저장
     redis_key_board_videos = f"board_videos:{board_id}"
-    existing_videos = RedisHandler.get_from_redis(redis_key_board_videos) or []
-    combined_videos = list(set(existing_videos + video_ids))
-    RedisHandler.save_to_redis(redis_key_board_videos, json.dumps(combined_videos))
+    existing_videos = RedisHandler.get_from_redis_list(redis_key_board_videos) or []
+    print(f"[DEBUG] Redis에서 가져온 기존 board_videos:{board_id}: {existing_videos}")
 
-    print(f"Redis에 저장된 board_videos:{board_id}: {video_ids}")
+
+    combined_videos = list(set(existing_videos + video_ids))
+    RedisHandler.save_to_redis_list(redis_key_board_videos, json.dumps(combined_videos))
+    print(f"[DEBUG] Redis에 board_videos:{board_id} 저장 완료 (중복 제거 후 {len(combined_videos)}개 저장).")
+
     return video_ids
 
 
@@ -85,8 +90,10 @@ def fetch_video_details(video_ids: list[str]) -> list[dict]:
             raise ValueError(
                 f"YouTube API 호출에 실패했습니다. (Video IDs: {chunk_ids})"
             )
+        print(f"[DEBUG] youtube API로 동영상 세부 정보 가져옴: {video_response}")
 
         video_data = video_response.json()
+        print(f"[DEBUG] video_response.json(): {video_data}")
         for video in video_data.get("items", []):
             snippet = video.get("snippet", {})
             video_info = {
@@ -97,10 +104,16 @@ def fetch_video_details(video_ids: list[str]) -> list[dict]:
                     "description", ""
                 )[:max_desc_length],
             }
+            print(f"[DEBUG] for video in video_data.get(items, []): {video_data}")
 
             # Redis에 저장
             redis_key_video = f"youtube_video:{video['id']}"
-            RedisHandler.save_to_redis(redis_key_video, json.dumps(video_info))
+            try:
+                RedisHandler.save_video_details_to_redis(redis_key_video, video_info)
+                print(f"[DEBUG] Redis에 저장된 키: {redis_key_video}, 값: {json.dumps(video_info)}")
+            except Exception as e:
+                print(f"[ERROR] Redis 저장 실패 (Key: {redis_key_video}): {e}")
+
             video_details.append(video_info)
 
     return video_details
