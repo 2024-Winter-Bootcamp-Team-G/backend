@@ -42,6 +42,11 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
     4. **Prevent empty categories**:
        - All 4 categories must contain relevant videos or inferred topics.
        - If there’s no data for a category, infer a general category based on trends or related fields.
+       
+    5. **generate  board_name**
+       - Generate board names based on the created keywords and categories.
+       - The names are created by mixing adjectives and nouns.
+       - The board name must always be a single, unique name.
 
     ### Output Format:
     Respond strictly in JSON format:
@@ -53,7 +58,8 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
             "Category2": ["Keyword1", "Keyword2", "Keyword3"],
             "Category3": ["Keyword1", "Keyword2", "Keyword3"],
             "Category4": ["Keyword1", "Keyword2", "Keyword3"]
-        }}
+        }},
+        "board_name": [board_name]
     }}
     
     ### Important Notes:
@@ -156,12 +162,14 @@ async def match_board_ratio(board_sum_list: list):
     cosine similarity while reflecting the given weights for the conditions to derive the final similarity score.
     
     #Analysis Method
-    1.The input format is as follows: “keywords”: {{"category":["keywords1",…..],…..}}.
+    1.The input format is as follows: “keywords”: {{"category1":["keywords1",…..],"category2":[..]..}}.
     2.Ignore the outermost 'keywords' in the received JSON.
-    3.Gather all keywords(keyword1, keyword2, and keyword3....) from within the 'category' to create the user1_keywords list.
-     At this point, user1_keywords refers to the keywords of board1. Similarly, create the user2_keywords list.
-    4.Compare the keyword lists of the two users.
-    5.Evaluate the similarity for each keyword pair according to the following criteria:
+    3.Gather all keywords(keyword1, keyword2, and keyword3....) from within the 'category' to create the user1_keywords
+      list. At this point, user1_keywords refers to the keywords of board1. Similarly, create the user2_keywords list.
+    4.Gather only the categories from board1 to create the 'user 1's categories' list. 
+      Similarly create the 'user 2's categories'. 
+    5.Compare the keyword lists of the two users.
+    6.Evaluate the similarity for each keyword pair according to the following criteria:
         -Exact match (Weight: 0.25)
         -Semantic similarity (Weight: 0.23)
         -Hierarchical relationship (Weight: 0.20)
@@ -169,9 +177,9 @@ async def match_board_ratio(board_sum_list: list):
         -Functional similarity (Weight: 0.10)
         -Synonymous relationship (Weight: 0.10)
         -Technical relevance (Weight: 0.10)
-    6.Calculate similarity scores based on each criterion and apply the weights.
-    7.Sum all the scores to derive the final similarity score.
-    8.Collect the overlapping elements from both users' keyword lists to create match_keywords.
+    7.Calculate similarity scores based on each criterion and apply the weights.
+    8.Sum all the scores to derive the final similarity score.
+    9.Collect the overlapping elements from both users' keyword lists to create match_keywords.
 
     #constraints
     "Exclude categories from calculations and outputs."
@@ -194,7 +202,9 @@ async def match_board_ratio(board_sum_list: list):
     {{ 
         "result": 
         {{ 
+            "user1_category": [user 1's categories],
             "user1_keywords": [user 1's keywords excluding matching keywords.],
+            "user2_category": [user 2's categories],            
             "user2_keywords": [user 2's keywords excluding matching keywords.], 
             "match_keywords": [matching keywords], 
             "similarity_score": [Final similarity score] 

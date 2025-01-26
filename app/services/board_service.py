@@ -62,6 +62,7 @@ async def create_board(
     gpt_result = await process_channel_data(channel_ids)
     category_ratio = gpt_result.get("category_ratio", [])
     keywords = gpt_result.get("keywords", {})
+    board_name = gpt_result.get("board_name", [])
 
     # 4. DALL·E를 통한 이미지 생성
     try:
@@ -92,6 +93,7 @@ async def create_board(
     new_board.image_url = gcs_image_url
     new_board.category_ratio = category_ratio
     new_board.keywords = keywords
+    new_board.board_name = board_name
     db.commit()
 
     return {
