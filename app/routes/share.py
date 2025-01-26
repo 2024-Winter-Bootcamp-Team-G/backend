@@ -16,7 +16,7 @@ async def share_board(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    자신의 공유하려는 사용자가 자신의 보드를 공유하기 위해 URL을 생성합니다.
+    자신의 공유하려는 사용자가 자신의 보드를 공유하기 위해 UUID를 생성합니다.
     """
     try:
         # 해당 보드가 현재 사용자 소유인지 확인
@@ -29,20 +29,20 @@ async def share_board(
             )
 
         # Redis에 공유 링크 설정 (TTL: 1시간)
-        redis_key = f"shared_link:{board.uuid}"
+        redis_key = f"shared_uuid:{board.uuid}"
         redis_client.set(redis_key, board_id, ex=3600)
 
-        # 공유 링크 반환
-        shared_url = f"http://localhost:8000/boards/shared/{board.uuid}"
+        # UUID 반환
+        shared_uuid = f"{board.uuid}"
         return {
-            "message": "공유 링크가 성공적으로 생성되었습니다.",
-            "result": {"shared_url": shared_url},
+            "message": "보드의 UUID가 성공적으로 반환되었습니다.",
+            "result": {"shared_url": shared_uuid},
         }
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"링크 생성 중 오류가 발생했습니다: {str(e)}"
+            status_code=500, detail=f"UUID 반환 중 오류가 발생했습니다: {str(e)}"
         )
 
 
