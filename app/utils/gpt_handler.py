@@ -244,71 +244,166 @@ async def regenerate_keywords_for_specific_category(
 async def match_board_ratio(board_sum_list: list):
     # 두 board_id를 프롬프트에 전달
     prompt = f"""
-    #Instruction
-    You are a keyword similarity analysis expert. You need to receive the keyword lists of two users, 
-    calculate the similarity, and provide an analysis of the results. Calculate the similarity based on
-    cosine similarity while reflecting the given weights for the conditions to derive the final similarity score.
+    # Instruction
+    You are a keyword similarity analysis expert. Your task is to compare the keyword lists of two users, 
+    calculate their similarity scores, and provide an analysis of the results. The similarity should be 
+    calculated based on cosine similarity while applying the specified weights for given similarity conditions.
     
-    #Analysis Method
-    1.The input format is as follows: “keywords”: {{"category1":["keywords1",…..],"category2":[..]..}}.
-    2.Ignore the outermost 'keywords' in the received JSON.
-    3.Gather all keywords(keyword1, keyword2, and keyword3....) from within the 'category' to create the user1_keywords
-      list. At this point, user1_keywords refers to the keywords of board1. Similarly, create the user2_keywords list.
-    4.Gather only the categories from board1 to create the 'user 1's categories' list. 
-      Similarly create the 'user 2's categories'. 
-    5.Compare the keyword lists of the two users.
-    6.Evaluate the similarity for each keyword pair according to the following criteria:
-        -Exact match (Weight: 0.25)
-        -Semantic similarity (Weight: 0.23)
-        -Hierarchical relationship (Weight: 0.20)
-        -Industrial relationship (Weight: 0.20)
-        -Functional similarity (Weight: 0.10)
-        -Synonymous relationship (Weight: 0.10)
-        -Technical relevance (Weight: 0.10)
-    7.Calculate similarity scores based on each criterion and apply the weights.
-    8.Sum all the scores to derive the final similarity score.
-    9.Collect the overlapping elements from both users' keyword lists to create match_keywords.
-
-    #constraints
-    "Exclude categories from calculations and outputs."
-    "All calculation results must be rounded to the third decimal place."
-    "Convert the calculation results to percentages."
-    "Strictly apply the given criteria when assessing the similarity between keywords."
-    "Avoid duplicate calculations, and evaluate each keyword pair only once."
-    "Present the results in the specified JSON format."    
+    # Instructions for Analysis
+    1. The **input format** includes `keywords` in JSON, structured as follows
+    2. Ignore the outermost "keywords" field from the input JSON and extract:
+    - **user1_keywords:** Gather all keywords from all categories of User 1's input.
+    - **user2_keywords:** Similarly, gather all keywords from all categories of User 2's input.
+    - **user1 categories:** Gather category names from User 1's dataset.
+    - **user2 categories:** Gather category names from User 2's dataset.
     
-    #Notes
-    "Consider the context and meaning of the keywords when determining similarity."
-    "Evaluate relevance by reflecting industry and technological trends."
-    "Maintain consistency and accuracy in the results."
-    "In the input, the term "keywords" must be ignored."
-
-    # Dataset: Below is the dataset you need to analyze:
+    3. Compare the `user1_keywords` to `user2_keywords`. 
+       Use the following weights to calculate similarity based on these conditions:
+    - **Exact match** (Weight: 0.25)
+    - **Semantic similarity** (Weight: 0.23)
+    - **Hierarchical relationship** (Weight: 0.20)
+    - **Industrial relationship** (Weight: 0.20)
+    - **Functional similarity** (Weight: 0.10)
+    - **Synonymous relationship** (Weight: 0.10)
+    - **Technical relevance** (Weight: 0.10)
+    
+    4. Perform the similarity calculations:
+    - Evaluate similarity for **each keyword pair** from `user1_keywords` and `user2_keywords`.
+    - Apply each of the above criteria, reflecting the weights, to compute the **final similarity score**.
+    - **Exclude categories** from calculations.
+    
+    5. Identify matching keywords:
+    - Collect keywords that overlap in both `user1_keywords` and `user2_keywords` to form `match_keywords`.
+    - Exclude these overlapping keywords when preparing final outputs for `user1_keywords` and `user2_keywords`.
+    
+    6. Round all calculation results to **three decimal places**, then convert to percentages.
+    
+    7. Avoid duplicate calculations:
+    - Evaluate each keyword pair only once.
+    
+    8. Maintain consistency and equality across all calculation steps.
+    
+    ---
+    # Dataset:
+    Below is the dataset you need to analyze:
     {json.dumps(board_sum_list, ensure_ascii=False, indent=2)}
     
-    # Output Format:
-    {{ 
-        "result": 
-        {{ 
-            "user1_category": [user 1's categories],
-            "user1_keywords": [user 1's keywords excluding matching keywords.],
-            "user2_category": [user 2's categories],            
-            "user2_keywords": [user 2's keywords excluding matching keywords.], 
-            "match_keywords": [matching keywords], 
-            "similarity_score": [Final similarity score] 
-        }} 
+    # Dataset Example (Input):
+    ```
+    {{
+    "keywords": {{
+     "category1": ["keywordA", "keywordB"],
+     "category2": ["keywordC", "keywordD"]
+        }},
+    "keywords": {{
+     "category1": ["keywordX", "keywordB"],
+     "category3": ["keywordY", "keywordZ"]
+        }}
     }}
+    
+    #Output Format
+    Respond strictly in JSON format
+    ```json
+    {{
+      "result": {{
+        "user1_category": [list of User 1's categories],
+        "user1_keywords": [list of User 1's keywords excluding matching keywords],
+        "user2_category": [list of User 2's categories],
+        "user2_keywords": [list of User 2's keywords excluding matching keywords],
+        "match_keywords": [list of matching keywords],
+        "similarity_score": "Final similarity score with percentages"
+      }}
+    }}
+    
+    # Constraints:
+    -Exclude categories from all calculations and outputs.
+    -Adhere strictly to the given weights for similarity evaluation.
+    -Ensure the final similarity score is a percentage rounded to three decimal places.
+    -Avoid duplicate evaluations and calculations for keyword pairs.
+    -Please make sure to adhere to the output format.
+    -The output must be in JSON format.
+    
+    # Recommendations:
+    -Reflect contextual and semantic relationships based on modern industry trends.
+    -Use cosine similarity logic when implementing the mathematical calculation.
+    -Maintain thorough consistency and accuracy in every step.
+    
+    # Notes
+    1.Ignore the outermost keywords field entirely.
+    2.Match and evaluate keywords only, without including categories in the calculations or outputs.
     """
 
-    try:
-        client = AsyncOpenAI(api_key=settings.openai_api_key)
-        response = await client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-        )
-        return json.loads(response.choices[0].message.content)
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"JSON 파싱 실패: {str(e)}")
-    except Exception as e:
-        raise RuntimeError(f"GPT 요청 실패: {str(e)}")
+    max_retries = 3
+    attempt = 0
+
+    while attempt < max_retries:
+        try:
+            client = AsyncOpenAI(api_key=settings.openai_api_key)
+            response = await client.chat.completions.create(
+                model="gpt-4o-2024-08-06",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=300,
+            )
+
+            response_content = response.choices[0].message.content.strip()
+            if not response_content:
+                raise ValueError("응답 데이터가 비어 있습니다!")  # 비어 있는 데이터 예외 처리
+
+            # 시작과 끝의 JSON 문자 확인
+            json_start = response_content.find("{")
+            json_end = response_content.rfind("}")
+
+            if json_start == -1 or json_end == -1:
+                raise ValueError("JSON 형식의 응답 데이터를 찾을 수 없습니다.")
+
+            # JSON 파싱
+            json_string = response_content[json_start:json_end + 1]
+
+            output_data = json.loads(json_string)
+            return output_data
+
+        except json.JSONDecodeError as e:
+            attempt += 1
+            if attempt < max_retries:
+                print(f"JSON 파싱 실패, {attempt}번째 재시도: {str(e)}")
+            else:
+                raise RuntimeError(f"JSON 파싱 실패: {str(e)}")  # 최종 실패 시 예외 발생
+        except Exception as e:
+            attempt += 1
+            if attempt < max_retries:
+                print(f"GPT 요청 실패, {attempt}번째 재시도: {str(e)}")
+            else:
+                raise RuntimeError(f"GPT 요청 실패: {str(e)}")  # 최종 실패 시 예외 발생
+
+    # try:
+    #     client = AsyncOpenAI(api_key=settings.openai_api_key)
+    #     response = await client.chat.completions.create(
+    #         model="gpt-4o-2024-08-06",
+    #         messages=[{"role": "user", "content": prompt}],
+    #         max_tokens=300,
+    #     )
+    #     #return json.loads(response.choices[0].message.content)
+    #     response_content = response.choices[0].message.content.strip()
+    #     if not response_content:
+    #         raise ValueError("응답 데이터가 비어 있습니다!")  # 비어 있는 데이터 예외 처리
+    #
+    #     # 시작과 끝의 JSON 문자 확인
+    #     json_start = response_content.find("{")
+    #     json_end = response_content.rfind("}")
+    #
+    #     if json_start == -1 or json_end == -1:
+    #         raise ValueError("JSON 형식의 응답 데이터를 찾을 수 없습니다.")
+    #
+    #     # JSON 파싱
+    #     json_string = response_content[json_start:json_end + 1]
+    #
+    #     try:
+    #         output_data = json.loads(json_string)
+    #         return output_data
+    #     except json.JSONDecodeError as e:
+    #         raise RuntimeError(f"JSON 파싱 실패: {str(e)}")
+    #
+    # # except json.JSONDecodeError as e:
+    # #     raise RuntimeError(f"JSON 파싱 실패: {str(e)}")
+    # except Exception as e:
+    #     raise RuntimeError(f"GPT 요청 실패: {str(e)}")
