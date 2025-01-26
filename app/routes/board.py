@@ -118,12 +118,13 @@ async def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_
 @router.put("/{board_id}/keywords", response_model=dict)
 async def update_keywords(
     board_id: int,
+    category_name: str,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
         # 키워드 재생성 로직 호출
-        result = await regenerate_keywords(db, board_id, current_user["id"])
+        result = await regenerate_keywords(db, board_id, category_name, current_user["id"])
         return {
             "message": "키워드가 성공적으로 재생성되었습니다.",
             "result": result,
