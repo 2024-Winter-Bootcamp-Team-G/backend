@@ -151,53 +151,57 @@ async def match_board_ratio(board_sum_list: list):
     # 두 board_id를 프롬프트에 전달
     prompt = f"""
     #Instruction
-    You are a YouTube Algorithm Expert. Your role is to analyze the keywords provided in two datasets, calculate the 
-    similarity rate between the two datasets, and provide an analysis.
+    You are a keyword similarity analysis expert. You need to receive the keyword lists of two users, 
+    calculate the similarity, and provide an analysis of the results. Calculate the similarity based on
+    cosine similarity while reflecting the given weights for the conditions to derive the final similarity score.
     
-    #Constraints
-    1.Each dataset contains exactly 12 keywords, with a total of 24 keywords provided.
-    2.The calculation method must use cosine similarity.
-    3.Calculation steps:
-      a. Assess the similarity of the keywords and assign weight values based on the criteria.
-      b. Apply the weight values to calculate the cosine similarity.
-      c. Convert the resulting cosine similarity calculation into a percentage and include this value in the final JSON
-         output.
-    4.Similarity criteria and weights:
-     Exact Match: Identical keywords
-      -Weight 0.25
-     Semantic Similarity: Keywords belonging to the same category
-      -Weight 0.23
-     Hierarchical Relationship: One keyword is a sub-concept of another keyword
-      -Weight 0.2
-     Industry Relationship: Keywords from the same industry or field
-      -Weight 0.2
-     Functional Similarity: Keywords with similar purposes or functions
-     -Weight 0.1
-     Synonym Relationship: Keywords with the same meaning but different words
-      -Weight 0.1
-     Technological Relation: Keywords closely related in terms of technology
-      -Weight 0.1
-     The similarity score will account for the semantic relationships between keywords, trend relevance, search
-     frequency, and other factors.
+    #Analysis Method
+    1.The input format is as follows: “keywords”: {{"category":["keywords1",…..],…..}}.
+    2.Ignore the outermost 'keywords' in the received JSON.
+    3.Gather all keywords(keyword1, keyword2, and keyword3....) from within the 'category' to create the user1_keywords list.
+     At this point, user1_keywords refers to the keywords of board1. Similarly, create the user2_keywords list.
+    4.Compare the keyword lists of the two users.
+    5.Evaluate the similarity for each keyword pair according to the following criteria:
+        -Exact match (Weight: 0.25)
+        -Semantic similarity (Weight: 0.23)
+        -Hierarchical relationship (Weight: 0.20)
+        -Industrial relationship (Weight: 0.20)
+        -Functional similarity (Weight: 0.10)
+        -Synonymous relationship (Weight: 0.10)
+        -Technical relevance (Weight: 0.10)
+    6.Calculate similarity scores based on each criterion and apply the weights.
+    7.Sum all the scores to derive the final similarity score.
+    8.Collect the overlapping elements from both users' keyword lists to create match_keywords.
+
+    #constraints
+    "Exclude categories from calculations and outputs."
+    "All calculation results must be rounded to the third decimal place."
+    "Convert the calculation results to percentages."
+    "Strictly apply the given criteria when assessing the similarity between keywords."
+    "Avoid duplicate calculations, and evaluate each keyword pair only once."
+    "Present the results in the specified JSON format."    
     
     #Notes
-    Carefully analyze the keywords provided and evaluate their similarity based on the given criteria.
-    Ensure that the result is presented in the specified JSON format.
+    "Consider the context and meaning of the keywords when determining similarity."
+    "Evaluate relevance by reflecting industry and technological trends."
+    "Maintain consistency and accuracy in the results."
+    "In the input, the term "keywords" must be ignored."
 
-    
-
-    키워드 데이터:
+    # Dataset: Below is the dataset you need to analyze:
     {json.dumps(board_sum_list, ensure_ascii=False, indent=2)}
-
-    출력 예시:
-    {{
-        "result": {{
-            "user1_keywords": [keywords1, keywords2, keywords3, keywords4] ,
-            "user2_keywords": [keywords2, keywords5, keywords6, keywords4] ,
-            "match_keywords": [keywords2, keywords4],
-            "total_match_rate":[25.6]
+    
+    # Output Format:
+    {{ 
+        "result": 
+        {{ 
+            "user1_keywords": [user 1's keywords excluding matching keywords.],
+            "user2_keywords": [user 2's keywords excluding matching keywords.], 
+            "match_keywords": [matching keywords], 
+            "similarity_score": [Final similarity score] 
+        }} 
     }}
     """
+
     try:
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         response = await client.chat.completions.create(
