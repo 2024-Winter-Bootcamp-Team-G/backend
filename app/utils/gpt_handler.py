@@ -147,6 +147,94 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
         raise RuntimeError(f"GPT 요청 실패: {str(e)}")
 
 
+async def regenerate_keywords_for_specific_category(
+    category_name: str, current_keywords: dict, video_data_list: list[dict]
+) -> dict:
+    """
+    특정 카테고리의 키워드를 재생성합니다. 카테고리명은 유지하고 키워드만 변경됩니다.
+
+    Args:
+        category_name (str): 수정할 카테고리 이름.
+        current_keywords (dict): 현재 보드의 키워드 데이터.
+        video_data_list (list[dict]): 동영상 메타데이터 리스트.
+
+    Returns:
+        dict: 변경된 키워드를 포함한 전체 카테고리 데이터.
+    """
+    # 프롬프트 생성
+    prompt = f"""
+    You are an AI specializing in video content analysis. Your task is to update the keywords for a specific category 
+    based on the provided video dataset. The current category and its keywords are:
+
+    Category: {category_name}
+    Current Keywords: {current_keywords}
+
+    ### Objectives:
+    1. Generate **3 new keywords** for the provided category based on the dataset.
+    2. Avoid duplicating the current keywords. Ensure all keywords are unique.
+    3. Analyze the dataset to infer new insights and generate diverse, meaningful keywords.
+    4. Keywords should be contextually relevant and derived from the dataset’s `tags`, `localizedTitle`, and `localizedDescription`.
+
+    ### Dataset:
+    Below is the dataset you need to analyze:
+    {json.dumps(video_data_list, ensure_ascii=False, indent=2)}
+
+    ### Output Format:
+    Respond strictly in JSON format:
+    ```json
+    {{
+        "new_keywords": ["Keyword1", "Keyword2", "Keyword3"]
+    }}
+    ```
+
+    ### Notes:
+    - New keywords must be in **Korean**.
+    - Keywords should reflect the main themes or insights derived from the dataset.
+    - Avoid overly specific or repetitive terms.
+    - Ensure the output contains exactly 3 keywords.
+    """
+
+    try:
+        # OpenAI API 클라이언트 생성
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+        # GPT 호출
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+        )
+
+        # 응답 데이터 파싱
+        response_content = response.choices[0].message.content.strip()
+        json_start = response_content.find("{")
+        json_end = response_content.rfind("}")
+        if json_start == -1 or json_end == -1:
+            raise ValueError("JSON 형식의 응답을 찾을 수 없습니다.")
+
+        # JSON 데이터 파싱
+        json_string = response_content[json_start:json_end + 1]
+        output_data = json.loads(json_string)
+
+        # 새 키워드 추출
+        new_keywords = output_data.get("new_keywords", [])
+        if not new_keywords or len(new_keywords) != 3:
+            raise ValueError("생성된 키워드 데이터가 올바르지 않습니다.")
+
+        print(f"[DEBUG]: new keywords: {new_keywords}")
+        return {
+            "category_name": category_name,
+            "new_keywords": new_keywords,
+        }
+
+    except json.JSONDecodeError as e:
+        print(f"JSON 파싱 오류 발생: {str(e)}")
+        raise RuntimeError(f"JSON 파싱 실패: {str(e)}")
+    except Exception as e:
+        print(f"GPT 요청 실패: {str(e)}")
+        raise RuntimeError(f"GPT 요청 실패: {str(e)}")
+
+
 async def match_board_ratio(board_sum_list: list):
     # 두 board_id를 프롬프트에 전달
     prompt = f"""

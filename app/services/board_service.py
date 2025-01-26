@@ -4,7 +4,7 @@ from app.models.board import Board
 from app.utils import RedisHandler
 from app.utils.dalle_handler import generate_image_with_dalle, delete_image_from_gcs
 from app.utils.gcs_handler import upload_image_to_gcs
-from app.utils.gpt_handler import generate_keywords_and_category
+from app.utils.gpt_handler import generate_keywords_and_category, regenerate_keywords_for_specific_category
 from urllib.parse import urlparse
 from app.services.channel_service import (
     fetch_cached_videos,
@@ -167,9 +167,18 @@ async def process_channel_data(channel_ids: list[str]):
 
 
 # 키워드 재생성
-async def regenerate_keywords(db: Session, board_id: int, user_id: int):
+async def regenerate_keywords(db: Session, board_id: int, category_name: str, user_id: int):
     """
-    보드의 키워드를 재생성하며, 보드별 Redis 데이터를 기반으로 GPT 요청.
+    특정 카테고리의 키워드를 재생성합니다.
+
+    Args:
+        db (Session): 데이터베이스 세션.
+        board_id (int): 보드 ID.
+        user_id (int): 현재 사용자 ID.
+        category_name (str): 재생성할 카테고리 이름.
+
+    Returns:
+        dict: 재생성된 키워드.
     """
     board = get_board_by_id(db, board_id)
 
@@ -180,9 +189,18 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
         raise ValueError("권한이 없습니다.")
 
     try:
+        # 변경할 키워드 가져오기
+        all_keywords = json.loads(board.keywords) if isinstance(board.keywords, str) else board.keywords
+        print(f"[DEBUG] all_keywords: {all_keywords}")
+        normalized_category_name = category_name.strip()
+        if normalized_category_name not in all_keywords:
+            raise ValueError(f"카테고리 '{normalized_category_name}'가 존재하지 않습니다.")
+        current_keywords = all_keywords[category_name]
+
         # Redis에서 해당 보드의 채널 ID 목록 가져오기
         redis_board_key = f"board_videos:{board_id}"
         video_ids = RedisHandler.get_from_redis_list(redis_board_key)
+        print(f"[DEBUG] video_ids: {video_ids}")
 
         if not video_ids:
             raise ValueError(f"Redis에 보드 ID {board_id}의 동영상 데이터가 없습니다.")
@@ -191,7 +209,7 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
         video_data_list = []
         for video_id in video_ids:
             redis_video_key = f"youtube_video:{video_id}"
-            video_data = RedisHandler.get_from_redis_list(redis_video_key)
+            video_data = RedisHandler.get_video_details_from_redis(redis_video_key)
             if not video_data:
                 print(f"Redis에 동영상 ID {video_id}의 데이터가 없습니다.")
                 continue
@@ -200,20 +218,33 @@ async def regenerate_keywords(db: Session, board_id: int, user_id: int):
         if not video_data_list:
             raise ValueError("GPT로 보낼 데이터가 없습니다.")
 
+        print(f"[DEBUG] current_keywords: {current_keywords}")
+        print(f"[DEBUG] video_data_list: {video_data_list}")
+
         # GPT를 통해 키워드 및 카테고리 생성
-        gpt_result = await generate_keywords_and_category(video_data_list)
-        new_keywords = gpt_result.get("keywords", {})
+        gpt_result = await regenerate_keywords_for_specific_category(category_name, current_keywords, video_data_list)
+        print(f"[DEBUG] gpt_result: {gpt_result}")
+
+        # 'new_keywords' 필드에서 새 키워드 추출
+        new_keywords = gpt_result.get("new_keywords")
+
+        if not new_keywords:
+            raise ValueError("GPT가 새로운 키워드를 생성하지 못했습니다.")
 
         # 키워드 갱신
-        board.keywords = json.dumps(new_keywords, ensure_ascii=False)
-
+        all_keywords[category_name] = new_keywords
+        print(f"[DEBUG] all_keywords: {all_keywords}")
         # 변경사항 저장
+        db.query(Board).filter(Board.id == board_id).update(
+            {"keywords": all_keywords}
+        )
+        print(f"[DEBUG] inputted keywords: {json.dumps(all_keywords, ensure_ascii=False)}")
         db.commit()
         db.refresh(board)
 
         return {
             "board_id": board.id,
-            "new_keywords": new_keywords,
+            "new_keywords": all_keywords,
         }
 
     except Exception as e:
