@@ -201,6 +201,7 @@ async def match_board_ratio(board_sum_list: list):
         }} 
     }}
     """
+
     try:
         client = AsyncOpenAI(api_key=settings.openai_api_key)
         response = await client.chat.completions.create(
