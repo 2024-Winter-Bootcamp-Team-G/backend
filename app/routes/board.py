@@ -99,7 +99,11 @@ async def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_
 
     board_sum_list = [board1.keywords, board2.keywords]
 
+    print(board_sum_list)
+
     gpt_result = await match_board_ratio(board_sum_list)
+
+    print(gpt_result)
 
     return JSONResponse(
         status_code=200,
@@ -111,7 +115,6 @@ async def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_
         },
     )
 
-    return gpt_result
 
 
 # 키워드 재생성
