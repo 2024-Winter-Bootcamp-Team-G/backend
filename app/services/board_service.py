@@ -267,7 +267,8 @@ def regenerate_image(board_id: int, user_id: int, db: Session):
     for attempt in range(max_retries):
         try:
             gcs_image_url = upload_image_to_gcs(
-                new_image_url, f"boards/{user_id}/{board.board_name}.png"
+                new_image_url,
+                f"boards/{board.board_name}/{user_id}.png"
             )
             break
         except Exception as e:
