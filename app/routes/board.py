@@ -97,21 +97,18 @@ async def board_match(board_id1: int, board_id2: int, db: Session = Depends(get_
     board1 = get_board_by_id(db, board_id1)
     board2 = get_board_by_id(db, board_id2)
 
-    board_sum_list = [board1.keywords, board2.keywords]
+    print(f"[DEBUG] board1's keywords: {board1.keywords}")
+    print(f"[DEBUG] board2's keywords: {board2.keywords}")
 
-    print(board_sum_list)
+    gpt_result = await match_board_ratio(board1.keywords, board2.keywords)
 
-    gpt_result = await match_board_ratio(board_sum_list)
-
-    print(gpt_result)
+    print(f"[DEBUG] gpt_result: {gpt_result}")
 
     return JSONResponse(
         status_code=200,
         content={
             "message": "알고리즘 일치율 계산에 성공했습니다.",
-            "match_ratio": gpt_result,
-            "board1_category_ratio": board1.category_ratio,
-            "board2_category_ratio": board2.category_ratio,
+            "result": gpt_result,
         },
     )
 
