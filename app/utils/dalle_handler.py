@@ -25,22 +25,24 @@ def generate_image_with_dalle(category_ratio: list[int], keywords: dict) -> str:
         category_keywords = ", ".join(keywords[category])
         prompt_parts.append(f"{category} ({ratio}%): {category_keywords}")
     prompt = (
-        "You are a highly skilled illustrator drawing with Microsoft Paint. "
-        "You need to create pixel-style images based on the provided categories and keywords. "
-        "The images should look crude, with very low detail and rough lines. "
-        "Use dark colors to create a dull tone. Place all the drawings on a single page freely.\n\n"
-        "Draw pixelated illustrations based on the following themes:\n"
-        + "; ".join(prompt_parts)
-        + "\n\n"
-        "# Output Format:\n"
-        "- Image Description: [Provide a brief description of the generated image.]\n"
-        "- Main Colors: [List 3-5 dominant colors used in the image.]\n"
-        "- Mood: [Describe the overall mood of the image.]\n"
+        f"""
+        Create an image inspired by classic 35mm film photography. The image should evoke a nostalgic, cinematic atmosphere with warm, natural light and soft, grainy textures.
+        1. An image inspired by classic 35mm film photography, featuring a warm off-white hue and subtle grainy texture. The overall composition should capture a timeless, cinematic quality with natural imperfections characteristic of analog film.
+        2. Use slightly desaturated colors with natural tones, warm undertones, and soft lighting to evoke a nostalgic feel. The lighting should feel authentic and balanced to highlight the objects in the composition.
+        3. Include 3 to 4 objects based on all the keywords below, ensuring they are spaced apart with clear intervals while maintaining a harmonious composition.: 
+
+        {', '.join(prompt_parts)}
+
+        # Output Format:
+        - Image Description: [Provide a brief description of the generated image.]
+        - Main Colors: [List 3-5 dominant colors used in the image.]
+        - Mood: [Describe the overall mood of the image.]
+        """
     )
 
     try:
         response = client.images.generate(
-            model="dall-e-2",
+            model="dall-e-3",
             prompt=prompt,
             size="1024x1024",
             quality="standard",
