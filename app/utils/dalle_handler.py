@@ -26,11 +26,13 @@ def generate_image_with_dalle(category_ratio: list[int], keywords: dict) -> str:
         prompt_parts.append(f"{category} ({ratio}%): {category_keywords}")
     prompt = (
         f"""
-        Create an image inspired by classic 35mm film photography. The image should evoke a nostalgic, cinematic atmosphere with warm, natural light and soft, grainy textures.
-        1. An image inspired by classic 35mm film photography, featuring a warm off-white hue and subtle grainy texture. The overall composition should capture a timeless, cinematic quality with natural imperfections characteristic of analog film.
-        2. Use slightly desaturated colors with natural tones, warm undertones, and soft lighting to evoke a nostalgic feel. The lighting should feel authentic and balanced to highlight the objects in the composition.
-        3. Include 3 to 4 objects based on all the keywords below, ensuring they are spaced apart with clear intervals while maintaining a harmonious composition.: 
-
+        Whenever a description of the image is provided, use DALL-E-3 model to create the image based on the following instructions:
+        1. Illustration of an artistic graffiti poster with an emphasis on a flat, graphic style.
+        2. Minimize the three-dimensional effect and express it by utilizing the 2D layer and simple figure feel.
+        3. Utilize spray effects, rough brush strokes, and overlapping graffiti letters.
+        4. The style is abstract and artistic, avoiding any three-dimensional effects or photorealism, and using a diverse range of cool tones for a bold and harmonious composition.
+        5. Include 3 to 4 objects based on all the keywords below, ensuring they are spaced apart with clear intervals while maintaining a harmonious composition.: 
+       
         {', '.join(prompt_parts)}
 
         # Output Format:
