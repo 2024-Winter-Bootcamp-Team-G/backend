@@ -36,5 +36,5 @@ def auth_and_get_subscriptions(request: Request):
 
     # 프론트엔드로 리다이렉트, 주소 뒤에 data_id 반환
     data_id = subscription_data["data_id"]
-    redirect_url = f"http://localhost:5173/board?data_id={data_id}"
+    redirect_url = f"{GoogleConfig.FRONTEND_URL}/board?data_id={data_id}"
     return RedirectResponse(redirect_url)
