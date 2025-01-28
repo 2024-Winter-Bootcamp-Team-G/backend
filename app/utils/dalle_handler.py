@@ -32,7 +32,8 @@ def generate_image_with_dalle(category_ratio: list[int], keywords: dict) -> str:
         3. Utilize spray effects, rough brush strokes, and overlapping graffiti letters.
         4. The style is abstract and artistic, avoiding any three-dimensional effects or photorealism, and using a diverse range of cool tones for a bold and harmonious composition.
         5. Include 3 to 4 objects based on all the keywords below, ensuring they are spaced apart with clear intervals while maintaining a harmonious composition.: 
-       
+        6. Do not include text when generating the image
+        
         {', '.join(prompt_parts)}
 
         # Output Format:
@@ -46,7 +47,7 @@ def generate_image_with_dalle(category_ratio: list[int], keywords: dict) -> str:
         response = client.images.generate(
             model="dall-e-3",
             prompt=prompt,
-            size="1024x1024",
+            size="1024x1792",
             quality="standard",
             n=1,
         )
