@@ -15,19 +15,19 @@ app = FastAPI()
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://www.algorify.net"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(user.router)
-app.include_router(board.router)
-app.include_router(auth.router)
-app.include_router(profile.router)
-app.include_router(subscriptions.router)
-app.include_router(share.router)
-app.include_router(celery_tasks.router)
+app.include_router(user.router, prefix="/api")
+app.include_router(board.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(profile.router, prefix="/api")
+app.include_router(subscriptions.router, prefix="/api")
+app.include_router(share.router, prefix="/api")
+app.include_router(celery_tasks.router, prefix="/api")
 
 
 @app.get("/")
