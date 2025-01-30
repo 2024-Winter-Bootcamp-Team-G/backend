@@ -1,18 +1,14 @@
 from app.config import settings
 from celery import Celery
 
-app = Celery("backend", broker=settings.CELERY_BROKER_URL)
-app.conf.broker_connection_retry_on_startup = (
-    settings.CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP
-)
-
 celery_app = Celery(
     "backend",
-    broker=settings.celery_broker_url,
-    backend=settings.celery_result_backend,
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
 )
 
 celery_app.conf.update(
+    broker_connection_retry_on_startup=settings.CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP,
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
@@ -20,7 +16,7 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
+celery_app.autodiscover_tasks(["app.services.celery_tasks"])
 celery_app.conf.task_routes = {
-    "app.services.celery_tasks.add": {"queue": "default"},
-    "app.services.celery_tasks.send_email": {"queue": "email"},
+    "app.services.celery_tasks.create_board_task": {"queue": "default"},
 }

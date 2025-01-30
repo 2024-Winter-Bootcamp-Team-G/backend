@@ -52,6 +52,11 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -63,7 +68,7 @@ services:
       - backend-network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics ping"]
+      test: ["CMD-SHELL", "rabbitmqctl status"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,8 +82,10 @@ services:
       dockerfile: Dockerfile
     container_name: celery-worker
     depends_on:
-      - rabbitmq
-      - redis-service
+      rabbitmq:
+        condition: service_healthy
+      redis-service:
+        condition: service_healthy
     command: ["celery", "-A", "app.utils.celery_app", "worker", "--loglevel=info"]
     env_file:
       - .env
@@ -87,10 +94,25 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - C_FORCE_ROOT=False
-      - BROKER_URL=${CELERY_BROKER_URL}
-      - RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     networks:
       - backend-network
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    depends_on:
+      - rabbitmq
+      - celery-worker
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    command: celery --broker=${CELERY_BROKER_URL} flower
+    networks:
+      - backend-network
+    ports:
+      - "5555:5555"
 
 volumes:
   db-data:
