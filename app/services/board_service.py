@@ -21,7 +21,7 @@ async def create_board(
     new_board = Board(
         user_id=user_id,
         uuid=str(uuid.uuid4()),
-        board_name="Generated Board",
+        board_name="보드 생성중...",
         image_url="",
         category_ratio=[],
         keywords={},
@@ -120,7 +120,7 @@ def get_board_by_id(db: Session, board_id: int):
     return db.query(Board).filter(Board.id == board_id).first()
 
 
-async def process_channel_data(channel_ids: list[str]):
+def process_channel_data(channel_ids: list[str]):
     """
     Redis에서 데이터 가져오기 및 GPT 키워드 생성
 
@@ -157,7 +157,7 @@ async def process_channel_data(channel_ids: list[str]):
 
         try:
             print(f"GPT에 전송할 채널 리스트: {video_data_list}")
-            gpt_result = await generate_keywords_and_category(video_data_list)
+            gpt_result = generate_keywords_and_category(video_data_list)
             print(f"GPT에서 받은 데이터: {gpt_result}")
             return gpt_result
         except Exception as e:

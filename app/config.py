@@ -22,20 +22,17 @@ class Settings(BaseSettings):
     gcp_credentials: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     # Celery 설정
-    celery_broker_url: str = (
-        f"pyamqp://guest:guest@{os.getenv('RABBITMQ_HOST', 'rabbitmq')}:5672//"
+    CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL")
+    CELERY_RESULT_BACKEND: str = os.getenv("CELERY_RESULT_BACKEND")
+    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP: bool = os.getenv("CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP",
+                                                                "True") == "True"
+    CELERY_FORCE_ROOT: bool = os.getenv("CELERY_FORCE_ROOT", "False") == "True"
+    CELERY_BROKER_CONNECTION_RETRY: bool = os.getenv("CELERY_BROKER_CONNECTION_RETRY", "True") == "True"
+    CELERY_BROKER_CONNECTION_MAX_RETRIES: int | None = (
+        int(os.getenv("CELERY_BROKER_CONNECTION_MAX_RETRIES")) if os.getenv(
+            "CELERY_BROKER_CONNECTION_MAX_RETRIES") else None
     )
-    celery_result_backend: str = (
-        f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', 6379)}/0"
-    )
-
-    # Celery 추가 설정
-    CELERY_BROKER_URL: str = "amqp://guest:guest@rabbitmq:5672//"
-    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP: bool = True
-    CELERY_FORCE_ROOT: str = os.getenv("CELERY_FORCE_ROOT", "False")
-    CELERY_BROKER_CONNECTION_RETRY: bool = True
-    CELERY_BROKER_CONNECTION_MAX_RETRIES: int = None
-    CELERY_BROKER_CONNECTION_RETRY_INTERVAL: int = 5
+    CELERY_BROKER_CONNECTION_RETRY_INTERVAL: int = int(os.getenv("CELERY_BROKER_CONNECTION_RETRY_INTERVAL", 5))
 
     class Config:
         env_file = ".env"
@@ -46,11 +43,11 @@ class Settings(BaseSettings):
 class RedisSettings:
     secret_key: str = os.getenv("SECRET_KEY")
     algorithm: str = os.getenv("ALGORITHM")
-    access_token_expire_minutes: float = float(
-        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30)
+    access_token_expire_minutes: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
     )
-    refresh_token_expire_minutes: float = float(
-        os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", 1440)
+    refresh_token_expire_minutes: int = int(
+        os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES")
     )
 
 

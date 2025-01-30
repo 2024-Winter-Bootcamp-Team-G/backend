@@ -1,9 +1,9 @@
 import json
-from openai import AsyncOpenAI
+from openai import OpenAI, AsyncOpenAI
 from app.config import settings
 
 
-async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
+def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
     """
     동영상 데이터에서 카테고리와 키워드를 추출하는 함수.
     최대 50개의 동영상 데이터를 처리하며, OpenAI API를 이용해 분석을 수행함.
@@ -109,12 +109,12 @@ async def generate_keywords_and_category(video_data_list: list[dict]) -> dict:
 	- If the dataset is highly repetitive, extract nuanced themes from metadata to create broader categories.
     """
 
-    # OpenAI API 클라이언트 생성
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    # OpenAI API 클라이언트 생성 (동기 방식)
+    client = OpenAI(api_key=settings.openai_api_key)
 
     try:
-        # OpenAI API 호출
-        response = await client.chat.completions.create(
+        # OpenAI API 호출 (동기 방식)
+        response = client.chat.completions.create(
             model="gpt-4o-2024-08-06",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
