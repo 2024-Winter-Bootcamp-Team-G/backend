@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# IDE (PyCharm)
+.idea/
+*.iml
+
+# 환경 변수 파일
+.env
+
+# GCP 서비스 계정 키 파일
+gcp-key.json
+
+# postgres-data
+postgres-data
